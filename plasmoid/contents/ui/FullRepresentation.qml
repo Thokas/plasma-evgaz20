@@ -9,6 +9,7 @@ import QtQuick
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.components as PlasmaComponents3
+import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.plasma.plasmoid
 
@@ -39,6 +40,8 @@ PlasmaExtras.Representation {
                 opacity: 0.6
             }
             PlasmaComponents3.ToolButton {
+                // The system tray has its own, next to its menu.
+                visible: !(Plasmoid.containmentDisplayHints & PlasmaCore.Types.ContainmentDrawsPlasmoidHeading)
                 icon.name: "configure"
                 onClicked: Plasmoid.internalAction("configure").trigger()
 

@@ -16,7 +16,8 @@ panel or the system tray.
   - whether someone is at the desk, what the keyboard does when you
     leave, and a switch for z20's presence service (lock the screen and
     the like, set up in `~/.config/z20/presence.ini`)
-- **Settings** (the gear in the popup, or right-click, Configure):
+- **Settings** (the configure button at the top of the popup, the pencil
+  next to "Lighting", or right-click, Configure):
   - **Lighting presets:** build the presets the popup offers: effect,
     up to 8 colors, brightness, speed and direction. "Try on the keyboard"
     shows one without storing it; "Back to stored" undoes that. Comes with
