@@ -79,7 +79,8 @@ QtObject {
     // --- plumbing --------------------------------------------------------
 
     readonly property string _z20: '"$HOME/.local/bin/z20"'
-    readonly property string _readCommand: _z20 + " status --json; echo; " + _z20 + " sensor --json; echo; "
+    // One line each: z20's JSON, or an empty line where it failed (its error goes to stderr).
+    readonly property string _readCommand: _z20 + " status --json || echo; " + _z20 + " sensor --json || echo; "
         + "systemctl --user is-active z20-presence.service"
     readonly property string _eventCommand: _z20 + " events --json --wait 30"
     property int _serial: 0
