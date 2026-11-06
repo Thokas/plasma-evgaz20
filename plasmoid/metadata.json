@@ -1,0 +1,24 @@
+{
+    "KPlugin": {
+        "Id": "de.thokas.evgaz20",
+        "Name": "EVGA Z20",
+        "Description": "The EVGA Z20 keyboard from the panel: profile, Game Mode, lighting, macro keys and the presence sensor, through z20",
+        "Icon": "input-keyboard",
+        "Category": "Utilities",
+        "Authors": [
+            {
+                "Name": "thokas"
+            }
+        ],
+        "License": "MIT",
+        "Version": "0.1.0",
+        "Website": "https://github.com/Thokas/plasma-evgaz20",
+        "EnabledByDefault": true
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-MainScript": "ui/main.qml",
+    "X-Plasma-NotificationArea": "true",
+    "X-Plasma-NotificationAreaCategory": "Hardware",
+    "Keywords": "keyboard;EVGA;Z20;RGB;lighting;macro;profile;Game Mode;presence;"
+}
