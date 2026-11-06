@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+  <group name="General">
+    <!-- The lighting presets, a JSON list (see ui/lib/presets.js); empty: the defaults. -->
+    <entry name="presets" type="String">
+      <default></default>
+    </entry>
+    <!-- The name of the preset last applied from the popup, to mark it there. -->
+    <entry name="lastPreset" type="String">
+      <default></default>
+    </entry>
+  </group>
+</kcfg>

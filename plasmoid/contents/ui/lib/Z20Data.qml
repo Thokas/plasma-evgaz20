@@ -17,6 +17,8 @@
 import QtQuick
 import org.kde.plasma.plasma5support as Plasma5Support
 
+import "presets.js" as Presets
+
 QtObject {
     id: z20
 
@@ -57,19 +59,10 @@ QtObject {
     function toggleGameMode() { run(["game-mode", "toggle"]); }
     function setNkro(on) { run(["nkro", on ? "on" : "off"]); }
     function setRate(hz) { run(["rate", hz]); }
+    function setGameModeKeys(keys) { run(["game-mode", "keys", keys.length ? keys.join(",") : "none"]); }
 
-    // An effect as the profile keeps it, or static / breathing with colors (rrggbb).
-    function setEffect(effect, colors) { run(["light", effect].concat(colors || [])); }
-
-    // The current effect again, with another brightness (static and breathing need their colors).
-    function setBrightness(percent) {
-        if (!lighting || lighting.effect === "off") {
-            return;
-        }
-        const colors = ["static", "breathing"].includes(lighting.effect)
-            ? (lighting.colors || []).map(c => c.replace("#", "")) : [];
-        run(["light", lighting.effect].concat(colors, ["--brightness", Math.round(percent)]));
-    }
+    // A lighting preset (see presets.js); live: only in the keyboard's RAM, to try it.
+    function applyPreset(preset, live) { run(Presets.args(preset, live)); }
 
     function setPresenceService(on) {
         _exec("systemctl --user " + (on ? "enable --now" : "disable --now") + " z20-presence.service");

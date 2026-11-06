@@ -1,6 +1,6 @@
 /*
- * The active profile (1-9, with its name), Game Mode with the keys it
- * blocks, n-key rollover and the report rate.
+ * The active profile (1-9, with its name) and Game Mode with the keys it
+ * blocks. Report rate and n-key rollover are in the settings.
  */
 
 import QtQuick
@@ -13,7 +13,6 @@ ColumnLayout {
 
     property var z20
     readonly property var status: z20 ? z20.status : null
-    readonly property var rates: [1000, 2000, 4000]
 
     Kirigami.Heading {
         level: 4
@@ -60,27 +59,5 @@ ColumnLayout {
             }
         }
 
-        PlasmaComponents3.Label {
-            text: i18n("N-key rollover")
-        }
-        PlasmaComponents3.Switch {
-            checked: !!section.status && section.status.nkro
-            onToggled: {
-                section.z20.setNkro(checked);
-                checked = Qt.binding(() => !!section.status && section.status.nkro);
-            }
-        }
-
-        PlasmaComponents3.Label {
-            text: i18n("Report rate")
-        }
-        PlasmaComponents3.ComboBox {
-            model: section.rates.map(hz => i18n("%1 Hz", hz))
-            currentIndex: section.status ? section.rates.indexOf(section.status.report_rate) : -1
-            onActivated: index => {
-                section.z20.setRate(section.rates[index]);
-                currentIndex = Qt.binding(() => section.status ? section.rates.indexOf(section.status.report_rate) : -1);
-            }
-        }
     }
 }

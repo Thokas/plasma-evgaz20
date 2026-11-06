@@ -1,7 +1,8 @@
 /*
  * The popup (or the widget itself on the desktop): the keyboard's profile
- * and switches, its lighting, what the macro keys do and the presence
- * sensor, one below the other.
+ * and Game Mode, the lighting presets, what the macro keys do and the
+ * presence sensor, one below the other. What's needed less often (report
+ * rate, n-key rollover, building presets) is in the settings.
  */
 
 import QtQuick
@@ -9,6 +10,7 @@ import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.components as PlasmaComponents3
 import org.kde.plasma.extras as PlasmaExtras
+import org.kde.plasma.plasmoid
 
 PlasmaExtras.Representation {
     id: full
@@ -35,6 +37,14 @@ PlasmaExtras.Representation {
                 visible: !!full.z20.status
                 text: full.z20.status ? i18n("firmware %1", full.z20.status.firmware) : ""
                 opacity: 0.6
+            }
+            PlasmaComponents3.ToolButton {
+                icon.name: "configure"
+                onClicked: Plasmoid.internalAction("configure").trigger()
+
+                PlasmaComponents3.ToolTip {
+                    text: i18n("Settings: lighting presets, report rate, n-key rollover, Game Mode keys")
+                }
             }
         }
     }
@@ -69,7 +79,7 @@ PlasmaExtras.Representation {
                 z20: full.z20
             }
 
-            LightingSection {
+            PresetsSection {
                 visible: !!full.z20.status
                 Layout.fillWidth: true
                 Layout.leftMargin: Kirigami.Units.largeSpacing

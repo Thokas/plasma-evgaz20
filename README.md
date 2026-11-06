@@ -10,12 +10,21 @@ panel or the system tray.
   profiles, a click opens the popup.
 - **Popup:**
   - profiles 1–9 with the active one's name
-  - Game Mode (and the keys it blocks), n-key rollover, report rate
-  - the lighting effect, a static color, the brightness
+  - Game Mode (and the keys it blocks)
+  - lighting presets: one click stores one in the active profile
   - what E1–E5 do, and how many other keys differ from the factory
   - whether someone is at the desk, what the keyboard does when you
     leave, and a switch for z20's presence service (lock the screen and
     the like, set up in `~/.config/z20/presence.ini`)
+- **Settings** (the gear in the popup, or right-click, Configure):
+  - **Lighting presets:** build the presets the popup offers: effect,
+    up to 8 colors, brightness, speed and direction. "Try on the keyboard"
+    shows one without storing it; "Back to stored" undoes that. Comes with
+    a few to start from (rainbow wave, ocean, sunset, spiral, stars, …).
+  - **Keyboard:** report rate, n-key rollover and the keys Game Mode
+    blocks; these apply at once. N-key rollover on (the normal case) means
+    any number of keys can be down at once; off limits it to six plus the
+    modifiers, which only some BIOS setups and KVM switches need.
 - **Right-click menu:** back up the keyboard (`z20 backup`), back to the
   stored lighting (`z20 light reload`).
 
