@@ -1,9 +1,9 @@
 /*
  * Settings, "Lighting presets": the presets the popup offers. Pick one to
- * change its name, effect, colors, brightness, speed and direction; try it
- * on the keyboard (only in its RAM: the stored lighting comes back with
- * "Back to stored" or a profile switch); add, remove and move presets.
- * Saved with Apply or OK.
+ * change its name, effect (the keyboard's own, or one z20 animates),
+ * colors, brightness, speed and direction; try it on the keyboard (only for
+ * now: what is stored comes back with "Back to stored"); add, remove and
+ * move presets. Saved with Apply or OK.
  */
 
 import QtQuick
@@ -134,6 +134,17 @@ KCM.SimpleKCM {
                 QQC2.ToolTip.text: i18n("Move right")
                 QQC2.ToolTip.visible: hovered
             }
+            QQC2.Button {
+                readonly property var missing: Presets.defaults()
+                    .filter(d => !page.presets.some(p => p.name === d.name))
+                icon.name: "edit-undo"
+                text: i18n("Add Built-in Presets")
+                enabled: missing.length > 0
+                onClicked: page.update(page.presets.concat(missing))
+                QQC2.ToolTip.text: missing.length
+                    ? i18n("Adds back: %1", missing.map(d => d.name).join(", ")) : i18n("All of them are there")
+                QQC2.ToolTip.visible: hovered
+            }
         }
 
         Kirigami.FormLayout {
@@ -148,9 +159,19 @@ KCM.SimpleKCM {
 
             QQC2.ComboBox {
                 Kirigami.FormData.label: i18n("Effect:")
-                model: Presets.EFFECTS
+                model: Presets.EFFECTS.map(e => Presets.LABELS[e])
                 currentIndex: page.preset ? Presets.EFFECTS.indexOf(page.preset.effect) : -1
                 onActivated: index => page.change("effect", Presets.EFFECTS[index])
+            }
+            QQC2.Label {
+                visible: !!page.preset && Presets.isSoftware(page.preset.effect)
+                text: i18n("Runs on this computer: z20 works out the colors and sends them 25 times a second "
+                           + "(the z20-animate user service, also after login). It pauses while the screen is "
+                           + "locked; the profile's own lighting shows then.")
+                font: Kirigami.Theme.smallFont
+                opacity: 0.7
+                wrapMode: Text.Wrap
+                Layout.maximumWidth: Kirigami.Units.gridUnit * 24
             }
 
             RowLayout {
@@ -261,7 +282,7 @@ KCM.SimpleKCM {
                 QQC2.Button {
                     icon.name: "view-refresh"
                     text: i18n("Back to stored")
-                    onClicked: z20.run(["light", "reload"])
+                    onClicked: z20.restoreLighting()
                 }
             }
             QQC2.Label {

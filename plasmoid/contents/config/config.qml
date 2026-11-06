@@ -8,6 +8,11 @@ ConfigModel {
         source: "ConfigPresets.qml"
     }
     ConfigCategory {
+        name: i18n("Profiles")
+        icon: "view-list-details"
+        source: "ConfigProfiles.qml"
+    }
+    ConfigCategory {
         name: i18n("Keyboard")
         icon: "input-keyboard"
         source: "ConfigKeyboard.qml"

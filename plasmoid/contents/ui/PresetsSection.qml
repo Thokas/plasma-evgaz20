@@ -1,6 +1,7 @@
 /*
  * The lighting presets as buttons, each with a strip of its colors. A
- * click applies one to the active profile (stored in the keyboard); the
+ * click applies one: the keyboard's own effects are stored in the active
+ * profile, software ones are saved as what z20's animate service runs. The
  * one applied last is marked while its effect still runs. Presets are
  * built in the settings ("Lighting presets").
  */
@@ -18,7 +19,9 @@ ColumnLayout {
 
     property var z20
     readonly property var presets: Presets.parse(Plasmoid.configuration.presets)
-    readonly property string effect: z20 && z20.lighting ? z20.lighting.effect : ""
+    // What shows: z20's software effect over the lighting, else the keyboard's own.
+    readonly property string effect: !z20 ? "" : z20.animation ? z20.animation.effect
+        : z20.lighting ? z20.lighting.effect : ""
 
     RowLayout {
         Layout.fillWidth: true

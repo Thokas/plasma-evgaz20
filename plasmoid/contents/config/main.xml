@@ -8,6 +8,10 @@
     <entry name="presets" type="String">
       <default></default>
     </entry>
+    <!-- The profiles the popup offers, as "1,2,3"; the active one shows as well. -->
+    <entry name="shownProfiles" type="String">
+      <default>1,2,3</default>
+    </entry>
     <!-- The name of the preset last applied from the popup, to mark it there. -->
     <entry name="lastPreset" type="String">
       <default></default>

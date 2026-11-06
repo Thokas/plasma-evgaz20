@@ -1,7 +1,8 @@
 /*
- * The presence sensor: whether someone is at the desk, what the keyboard
- * does when you leave, and the switch for z20's presence service (locking
- * the screen and the like, set up in ~/.config/z20/presence.ini).
+ * The presence sensor: whether someone is at the desk, the distance over
+ * the last two minutes against the distance that counts as present, what
+ * the keyboard itself does when you leave, and the switch for z20's
+ * presence service with what it does (~/.config/z20/presence.ini).
  */
 
 import QtQuick
@@ -14,42 +15,177 @@ ColumnLayout {
 
     property var z20
     readonly property var sensor: z20 ? z20.sensor : null
+    readonly property var settings: z20 ? z20.presenceSettings : null
     readonly property bool measured: !!sensor && sensor.on && sensor.distance_mm !== undefined
+    readonly property real within: z20 ? z20.presentWithinMm : 0
+    readonly property bool present: measured && sensor.distance_mm < within
+    readonly property bool nothing: measured && sensor.distance_mm >= 65000  // nothing in range
+
+    readonly property var actionText: ({
+        "lock": i18n("lock the screen"), "screen-off": i18n("screens off"), "wake": i18n("wake the screens"),
+        "pause-media": i18n("pause media"), "resume-media": i18n("resume media")
+    })
+    readonly property var keyboardLeave: ({
+        "dark": i18n("lights off"), "lock": i18n("locks the screen (Win+L)"), "sleep": i18n("sleep"),
+        "turn off": i18n("turns off")
+    })
+
+    function steps(list, run) {
+        const parts = list.map(a => (actionText[a.action] || a.action)
+                                    + (a.after_s ? " " + i18n("after %1 s", a.after_s) : ""));
+        if (run) {
+            parts.push(i18n("your command"));
+        }
+        return parts.length ? parts.join(", ") : i18n("nothing");
+    }
+
+    // What the service does, as presence.ini has it.
+    readonly property string serviceText: !settings ? ""
+        : i18n("Away %1 s: %2. Back %3 s: %4.", settings.leave_after_s, steps(settings.leave, settings.leave_run),
+               settings.come_after_s, steps(settings.come, settings.come_run))
 
     Kirigami.Heading {
         level: 4
-        text: i18n("Presence sensor")
+        text: i18n("Presence")
     }
 
-    PlasmaComponents3.Label {
-        text: !section.sensor ? "" : !section.sensor.on ? i18n("Off")
-            : !section.measured ? ""
-            : section.sensor.distance_mm < section.sensor.distance_cm * 10
-              ? i18n("Someone at the desk, %1 cm away", Math.round(section.sensor.distance_mm / 10))
-              : i18n("Nobody within %1 cm", section.sensor.distance_cm)
-        wrapMode: Text.Wrap
+    RowLayout {
+        spacing: Kirigami.Units.smallSpacing
         Layout.fillWidth: true
+
+        Kirigami.Icon {
+            source: !section.sensor || !section.sensor.on ? "user-offline"
+                : section.present ? "user-online" : "user-away"
+            implicitWidth: Kirigami.Units.iconSizes.smallMedium
+            implicitHeight: implicitWidth
+        }
+        PlasmaComponents3.Label {
+            text: !section.sensor ? "" : !section.sensor.on ? i18n("Sensor off in this profile")
+                : !section.measured ? i18n("Reading…")
+                : section.present ? i18n("At the desk · %1 cm", Math.round(section.sensor.distance_mm / 10))
+                : section.nothing ? i18n("Away · nothing in front of the sensor")
+                : i18n("Away · %1 cm", Math.round(section.sensor.distance_mm / 10))
+            elide: Text.ElideRight
+            Layout.fillWidth: true
+        }
+    }
+
+    // The last two minutes: distance up, the keyboard at the bottom; inside the band counts as present.
+    Canvas {
+        id: graph
+
+        readonly property real topMm: Math.max(section.within * 2, 1000)  // the distance at the top edge
+        readonly property color lineColor: Kirigami.Theme.textColor
+        readonly property color goodColor: Kirigami.Theme.positiveTextColor
+        readonly property color awayColor: Kirigami.Theme.neutralTextColor
+
+        visible: section.measured
+        Layout.fillWidth: true
+        Layout.preferredHeight: Kirigami.Units.gridUnit * 3
+
+        function yOf(mm) {
+            return height - Math.min(mm, topMm) / topMm * (height - 2) - 1;
+        }
+
+        onPaint: {
+            const ctx = getContext("2d");
+            ctx.reset();
+            const band = yOf(section.within);
+            ctx.fillStyle = Qt.rgba(goodColor.r, goodColor.g, goodColor.b, 0.12);
+            ctx.fillRect(0, band, width, height - band);
+            ctx.strokeStyle = Qt.rgba(goodColor.r, goodColor.g, goodColor.b, 0.6);
+            ctx.setLineDash([4, 3]);
+            ctx.beginPath();
+            ctx.moveTo(0, band);
+            ctx.lineTo(width, band);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            const now = Date.now();
+            const points = section.z20.distances.map(d => [(d.t - now + 120000) / 120000 * (width - 4), yOf(d.mm)]);
+            if (!points.length) {
+                return;
+            }
+            ctx.strokeStyle = Qt.rgba(lineColor.r, lineColor.g, lineColor.b, 0.8);
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            points.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+            ctx.stroke();
+            const last = points[points.length - 1];
+            ctx.fillStyle = section.present ? goodColor : awayColor;
+            ctx.beginPath();
+            ctx.arc(last[0], last[1], 3, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        Connections {
+            target: section.z20
+            function onDistancesChanged() { graph.requestPaint(); }
+        }
+        onWidthChanged: requestPaint()
+        onHeightChanged: requestPaint()
+
+        PlasmaComponents3.Label {
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: Math.min(parent.height - parent.yOf(section.within) + 1, parent.height - height)
+            text: i18n("%1 cm", Math.round(section.within / 10))
+            color: Kirigami.Theme.positiveTextColor
+            font: Kirigami.Theme.smallFont
+        }
+        PlasmaComponents3.Label {
+            anchors.left: parent.left
+            anchors.top: parent.top
+            text: i18n("2 min")
+            font: Kirigami.Theme.smallFont
+            opacity: 0.5
+        }
     }
 
     PlasmaComponents3.Label {
-        visible: !!section.sensor && section.sensor.on
-        text: section.sensor ? i18n("When you leave, the keyboard: %1 after %2 s", section.sensor.leave,
-                                    section.sensor.leave_after_s) : ""
+        readonly property string leave: section.sensor ? section.keyboardLeave[section.sensor.leave] || "" : ""
+        visible: !!section.sensor && section.sensor.on && leave !== ""
+        text: section.sensor ? i18n("Keyboard: %1 %2 s after you leave", leave, section.sensor.leave_after_s) : ""
+        font: Kirigami.Theme.smallFont
         opacity: 0.7
         wrapMode: Text.Wrap
         Layout.fillWidth: true
     }
 
-    PlasmaComponents3.Switch {
-        text: i18n("Act on the desktop when I leave and come back")
-        checked: section.z20.presenceActive
-        onToggled: {
-            section.z20.setPresenceService(checked);
-            checked = Qt.binding(() => section.z20.presenceActive);
-        }
+    RowLayout {
+        Layout.fillWidth: true
+        Layout.topMargin: Kirigami.Units.smallSpacing
 
-        PlasmaComponents3.ToolTip {
-            text: i18n("The z20-presence service: what it does is set in ~/.config/z20/presence.ini")
+        ColumnLayout {
+            spacing: 0
+            Layout.fillWidth: true
+
+            PlasmaComponents3.Label {
+                text: section.settings && section.settings.leave.some(a => a.action === "lock")
+                    ? i18n("Lock the screen when I leave") : i18n("Act on the desktop when I leave")
+                wrapMode: Text.Wrap
+                Layout.fillWidth: true
+            }
+            PlasmaComponents3.Label {
+                text: section.z20.presenceActive ? section.serviceText
+                    : i18n("Off. When on: %1", section.serviceText)
+                visible: section.serviceText !== ""
+                font: Kirigami.Theme.smallFont
+                opacity: 0.7
+                wrapMode: Text.Wrap
+                Layout.fillWidth: true
+            }
+        }
+        PlasmaComponents3.Switch {
+            checked: section.z20.presenceActive
+            onToggled: {
+                section.z20.setPresenceService(checked);
+                checked = Qt.binding(() => section.z20.presenceActive);
+            }
+
+            PlasmaComponents3.ToolTip {
+                text: i18n("The z20-presence service; what it does is set in ~/.config/z20/presence.ini")
+            }
         }
     }
 }

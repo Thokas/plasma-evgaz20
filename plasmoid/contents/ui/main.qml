@@ -2,9 +2,9 @@
  * EVGA Z20 -- applet entry point.
  *
  * A panel and desktop front end for z20 (~/.local/bin/z20,
- * https://github.com/Thokas/evga-z20): the active profile, Game Mode,
- * the lighting, what the macro keys do and the presence sensor, with the
- * presence service's switch.
+ * https://github.com/Thokas/evga-z20): the profiles, Game Mode, lighting
+ * presets (the keyboard's effects and z20's software ones), what the macro
+ * keys do and the presence sensor, with the presence service's switch.
  *
  * Reads the keyboard every 3 s while the popup is open (or on the
  * desktop), every 30 s otherwise, and at once when the keyboard reports a
@@ -24,6 +24,7 @@ PlasmoidItem {
     Lib.Z20Data {
         id: z20Data
         fast: root.expanded || Plasmoid.formFactor === PlasmaCore.Types.Planar
+        shownProfiles: Plasmoid.configuration.shownProfiles.split(",").map(Number).filter(n => n >= 1 && n <= 9)
     }
 
     switchWidth: Kirigami.Units.gridUnit * 16
@@ -53,7 +54,7 @@ PlasmoidItem {
         PlasmaCore.Action {
             text: i18n("Back to the Stored Lighting")
             icon.name: "view-refresh"
-            onTriggered: z20Data.run(["light", "reload"])
+            onTriggered: z20Data.restoreLighting()
         }
     ]
 }

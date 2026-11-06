@@ -1,49 +1,100 @@
 /*
- * The active profile (1-9, with its name) and Game Mode with the keys it
- * blocks. Report rate and n-key rollover are in the settings.
+ * The profiles to pick from, with their names (which and how they are
+ * called is set in the settings, "Profiles"; the active one always shows),
+ * all nine behind the menu button, and Game Mode with the keys it blocks.
  */
 
 import QtQuick
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.components as PlasmaComponents3
+import org.kde.plasma.plasmoid
 
 ColumnLayout {
     id: section
 
     property var z20
     readonly property var status: z20 ? z20.status : null
+    readonly property var shown: {
+        const list = z20.shownProfiles.slice();
+        if (status && list.indexOf(status.profile) < 0) {
+            list.push(status.profile);
+        }
+        return list.sort((a, b) => a - b);
+    }
 
-    Kirigami.Heading {
-        level: 4
-        text: section.status ? i18n("Profile %1: %2", section.status.profile, section.status.profile_name) : ""
-        elide: Text.ElideRight
-        Layout.fillWidth: true
+    // "Work" or, for a name as from the factory ("DEFAULT 3"), "Profile 3".
+    function label(n) {
+        const name = z20.profileName(n);
+        return !name || /^default \d$/i.test(name.trim()) ? i18n("Profile %1", n) : name;
     }
 
     RowLayout {
-        spacing: 0
         Layout.fillWidth: true
 
-        Repeater {
-            model: 9
+        Kirigami.Heading {
+            level: 4
+            text: i18n("Profile")
+            Layout.fillWidth: true
+        }
+        PlasmaComponents3.ToolButton {
+            icon.name: "overflow-menu"
+            onClicked: menu.open()
 
-            PlasmaComponents3.ToolButton {
-                text: index + 1
-                checked: !!section.status && section.status.profile === index + 1
-                Layout.fillWidth: true
-                onClicked: section.z20.setProfile(index + 1)
+            PlasmaComponents3.ToolTip {
+                text: i18n("All profiles")
+            }
 
-                PlasmaComponents3.ToolTip {
-                    text: i18n("Profile %1 (Fn + %1)", index + 1)
+            PlasmaComponents3.Menu {
+                id: menu
+
+                y: parent.height
+
+                Instantiator {
+                    model: 9
+                    delegate: PlasmaComponents3.MenuItem {
+                        text: i18n("%1  %2", index + 1, section.z20.profileName(index + 1))
+                        checkable: true
+                        checked: !!section.status && section.status.profile === index + 1
+                        onTriggered: section.z20.setProfile(index + 1)
+                    }
+                    onObjectAdded: (index, object) => menu.insertItem(index, object)
+                    onObjectRemoved: (index, object) => menu.removeItem(object)
+                }
+                PlasmaComponents3.MenuSeparator {}
+                PlasmaComponents3.MenuItem {
+                    icon.name: "configure"
+                    text: i18n("Name and Choose Profiles…")
+                    onTriggered: Plasmoid.internalAction("configure").trigger()
                 }
             }
         }
     }
 
     GridLayout {
-        columns: 2
-        columnSpacing: Kirigami.Units.largeSpacing
+        columns: 3
+        columnSpacing: Kirigami.Units.smallSpacing
+        rowSpacing: Kirigami.Units.smallSpacing
+        Layout.fillWidth: true
+
+        Repeater {
+            model: section.shown
+
+            PlasmaComponents3.Button {
+                text: section.label(modelData)
+                checked: !!section.status && section.status.profile === modelData
+                Layout.fillWidth: true
+                Layout.preferredWidth: 1  // equal columns
+                onClicked: section.z20.setProfile(modelData)
+
+                PlasmaComponents3.ToolTip {
+                    text: i18n("Profile %1 (Fn + %1)", modelData)
+                }
+            }
+        }
+    }
+
+    RowLayout {
         Layout.fillWidth: true
 
         PlasmaComponents3.Label {
@@ -58,6 +109,5 @@ ColumnLayout {
                 checked = Qt.binding(() => section.z20.gameMode);
             }
         }
-
     }
 }

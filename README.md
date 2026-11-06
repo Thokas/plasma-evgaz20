@@ -7,33 +7,40 @@ panel or the system tray.
 
 - **Panel icon:** a keyboard, with a gamepad in the corner while Game Mode
   is on. Middle click switches Game Mode, the wheel steps through the
-  profiles, a click opens the popup.
+  profiles the popup shows, a click opens the popup.
 - **Popup:**
-  - profiles 1–9 with the active one's name
+  - the profiles you chose, by name (all nine in the menu next to them)
   - Game Mode (and the keys it blocks)
-  - lighting presets: one click stores one in the active profile
+  - lighting presets: one click applies one. The keyboard's own effects
+    are stored in the active profile; the software ones (aurora, fire,
+    rain, ripples, scanner, gradient) run as z20's animate service, also
+    after login
   - what E1–E5 do, and how many other keys differ from the factory
-  - whether someone is at the desk, what the keyboard does when you
-    leave, and a switch for z20's presence service (lock the screen and
-    the like, set up in `~/.config/z20/presence.ini`)
+  - whether someone is at the desk, the distance over the last two
+    minutes against the distance that counts as present, what the keyboard
+    does when you leave, and a switch for z20's presence service with what
+    it does (lock the screen and the like, set up in
+    `~/.config/z20/presence.ini`)
 - **Settings** (the configure button at the top of the popup, the pencil
   next to "Lighting", or right-click, Configure):
   - **Lighting presets:** build the presets the popup offers: effect,
     up to 8 colors, brightness, speed and direction. "Try on the keyboard"
     shows one without storing it; "Back to stored" undoes that. Comes with
-    a few to start from (rainbow wave, ocean, sunset, spiral, stars, …).
+    a few to start from (rainbow wave, ocean, aurora, fire, matrix, …);
+    "Add Built-in Presets" brings back the ones not in the list.
+  - **Profiles:** which profiles the popup shows (the active one always
+    does) and their names, stored in the keyboard.
   - **Keyboard:** report rate, n-key rollover and the keys Game Mode
     blocks; these apply at once. N-key rollover on (the normal case) means
     any number of keys can be down at once; off limits it to six plus the
     modifiers, which only some BIOS setups and KVM switches need.
 - **Right-click menu:** back up the keyboard (`z20 backup`), back to the
-  stored lighting (`z20 light reload`).
+  stored lighting (`z20 light reload`, and the saved software effect).
 
-It reads the keyboard every 3 s while the popup is open, every 30 s
-otherwise, and at once when the keyboard reports a change made with its own
-keys (`z20 events`). Every change runs `z20`; lighting changes from the
-widget are stored in the keyboard's profile. Without a keyboard, the
-widget sits among the tray's hidden entries.
+It reads the keyboard every 3 s while the popup is open (the distance every
+second, for the graph), every 30 s otherwise, and at once when the keyboard
+reports a change made with its own keys (`z20 events`). Every change runs
+`z20`. Without a keyboard, the widget sits among the tray's hidden entries.
 
 > [!WARNING]
 > **Written entirely by AI.** Like z20, this widget was written by an AI
@@ -42,7 +49,8 @@ widget sits among the tray's hidden entries.
 
 ## Install
 
-Needs z20 installed (`~/.local/bin/z20`, with its udev rule), see
+Needs z20 installed (`~/.local/bin/z20`, with its udev rule; from
+2026-11-06 on, with `z20 animate`), see
 [evga-z20](https://github.com/Thokas/evga-z20).
 
 ```
