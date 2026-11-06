@@ -29,9 +29,10 @@ KCM.SimpleKCM {
 
     Kirigami.FormLayout {
         Kirigami.InlineMessage {
+            readonly property string error: z20.readError || z20.detailsError
             visible: z20.profiles.length === 0
-            type: Kirigami.MessageType.Warning
-            text: z20.readError || i18n("Reading the profiles…")
+            type: error ? Kirigami.MessageType.Warning : Kirigami.MessageType.Information
+            text: error ? i18n("Can't read the profiles: %1", error) : i18n("Reading the profiles…")
             Layout.fillWidth: true
         }
 

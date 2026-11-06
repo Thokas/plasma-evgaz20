@@ -39,8 +39,9 @@ QtObject {
     property var presenceSettings: null
     // The distance readings of the last two minutes: [{t (ms), mm}].
     property var distances: []
-    // Why there is no status (no keyboard, no z20), and the last failed command.
+    // Why there is no status (no keyboard, no z20) or no profile names, and the last failed command.
     property string readError: ""
+    property string detailsError: ""
     property string commandError: ""
 
     readonly property bool gameMode: !!status && status.game_mode
@@ -170,8 +171,11 @@ QtObject {
 
     function _readDetails(data) {
         const lines = (data.stdout || "").split("\n");
-        profiles = _parse(lines[0]) || profiles;
+        const listed = _parse(lines[0]);
+        profiles = listed || profiles;
         presenceSettings = _parse(lines[1]);
+        detailsError = listed ? "" : ((data.stderr || "").trim().split("\n").pop().replace(/^z20: /, "")
+                                      || i18n("No answer from z20"));
     }
 
     onFastChanged: if (fast) { refresh(); refreshDetails(); }
