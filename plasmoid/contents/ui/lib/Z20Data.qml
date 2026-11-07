@@ -16,6 +16,9 @@
  * connectSource() runs it, onNewData disconnects it again (as in Now
  * Playing's TabData). Actions get a serial number appended as a shell
  * comment, since a command still running isn't started a second time.
+ *
+ * Game Mode switched on (with its key, the popup or z20) shows Plasma's OSD,
+ * the volume keys' popup, which also shows over fullscreen games.
  */
 
 import QtQuick
@@ -133,6 +136,8 @@ QtObject {
         + " presence settings --json || echo"
     readonly property string _sensorCommand: _z20 + " sensor --json"
     readonly property string _eventCommand: _z20 + " events --json --wait 30"
+    readonly property string _osdCommand: "qdbus6 org.kde.plasmashell /org/kde/osdService "
+        + "org.kde.osdService.showText input-gaming " + _quote(i18n("Game Mode on"))
     property int _serial: 0
 
     function _quote(arg) {
@@ -176,6 +181,18 @@ QtObject {
         presenceSettings = _parse(lines[1]);
         detailsError = listed ? "" : ((data.stderr || "").trim().split("\n").pop().replace(/^z20: /, "")
                                       || i18n("No answer from z20"));
+    }
+
+    // Game Mode as last read; null until the first read, so starting up says nothing.
+    property var _lastGameMode: null
+    onStatusChanged: {
+        if (!status) {
+            return;  // keyboard gone or z20 busy: compare with the last read once it's back
+        }
+        if (status.game_mode && _lastGameMode === false) {
+            runner.connectSource(_osdCommand);
+        }
+        _lastGameMode = status.game_mode;
     }
 
     onFastChanged: if (fast) { refresh(); refreshDetails(); }
@@ -227,6 +244,9 @@ QtObject {
                 if (data["exit code"] === 0) {
                     z20._setSensor(z20._parse(data.stdout));
                 }
+                return;
+            }
+            if (source === z20._osdCommand) {
                 return;
             }
             if (source === z20._eventCommand) {

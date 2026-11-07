@@ -8,6 +8,8 @@ panel or the system tray.
 - **Panel icon:** a keyboard, with a gamepad in the corner while Game Mode
   is on. Middle click switches Game Mode, the wheel steps through the
   profiles the popup shows, a click opens the popup.
+- **Game Mode on:** Plasma's OSD (the volume keys' popup) says so, also
+  over fullscreen games, however it was switched on (its key, the popup, z20).
 - **Popup:**
   - the profiles you chose, by name (all nine in the menu next to them)
   - Game Mode (and the keys it blocks)
