@@ -17,14 +17,18 @@ panel or the system tray.
     are stored in the active profile; the software ones (aurora, fire,
     rain, ripples, scanner, gradient) run as z20's animate service, also
     after login
-  - what E1–E5 do, and how many other keys differ from the factory
+  - which macro E1–E5 run and how (once, a number of times, toggle,
+    while held), changed right there; the same for every other key or
+    Fn layer that runs one, and "Another Key" puts a macro on any key.
+    Below, how many other keys differ from the factory (the pencil there
+    leads to the macros)
   - whether someone is at the desk, the distance over the last two
     minutes against the distance that counts as present, what the keyboard
     does when you leave, and a switch for z20's presence service with what
     it does (lock the screen and the like, set up in
     `~/.config/z20/presence.ini`)
-- **Settings** (the configure button at the top of the popup, the pencil
-  next to "Lighting", or right-click, Configure):
+- **Settings** (the configure button at the top of the popup, the pencils
+  next to "Lighting" and "Macro keys", or right-click, Configure):
   - **Lighting presets:** build the presets the popup offers: effect,
     up to 8 colors, brightness, speed and direction. "Try on the keyboard"
     shows one without storing it; "Back to stored" undoes that. Comes with
@@ -32,6 +36,21 @@ panel or the system tray.
     "Add Built-in Presets" brings back the ones not in the list.
   - **Profiles:** which profiles the popup shows (the active one always
     does) and their names, stored in the keyboard.
+  - **Macros:** the macros stored in the keyboard, listed by name with a
+    search, each with a short line of its steps and the keys that run it;
+    write new ones, change their name and steps, delete them. Picking
+    another macro with changes not stored asks first. The steps show as a
+    list: keys as
+    keycaps (pressed, held down or let go, with a bar along the side while
+    a key is held), clicks, wheel, media keys, and waits with a bar for
+    their length. Pick a step to change it; add steps from a menu or
+    record them from the keys you press (optionally with the pauses
+    between them); move and remove them with the buttons or the keyboard
+    (Ctrl+Up / Down, Delete). The length, the run time and the room left
+    in the keyboard show under the list. "As Text" shows the steps as
+    lines, as `z20 macros` prints them (`LShift down`, `H`, `wait 20 ms`),
+    to paste or type. "Store in the Keyboard" writes the macro; z20 keeps
+    the one it replaces in `~/.local/state/z20/previous`.
   - **Keyboard:** report rate, n-key rollover and the keys Game Mode
     blocks; these apply at once. N-key rollover on (the normal case) means
     any number of keys can be down at once; off limits it to six plus the

@@ -2,7 +2,8 @@
  * The popup (or the widget itself on the desktop): the keyboard's profile
  * and Game Mode, the lighting presets, what the macro keys do and the
  * presence sensor, one below the other. What's needed less often (report
- * rate, n-key rollover, building presets) is in the settings.
+ * rate, n-key rollover, building presets, writing macros) is in the
+ * settings.
  */
 
 import QtQuick
@@ -46,7 +47,7 @@ PlasmaExtras.Representation {
                 onClicked: Plasmoid.internalAction("configure").trigger()
 
                 PlasmaComponents3.ToolTip {
-                    text: i18n("Settings: lighting presets, report rate, n-key rollover, Game Mode keys")
+                    text: i18n("Settings: lighting presets, profiles, macros, report rate, n-key rollover, Game Mode keys")
                 }
             }
         }

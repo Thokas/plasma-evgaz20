@@ -7,7 +7,9 @@
  * sensor alone also every second, for the distance graph. The profile names
  * (`z20 profile --json`) and what the presence service does (`z20 presence
  * settings --json`) change rarely: read at the start, when `fast` turns on
- * and after a rename. In between, `z20 events --json --wait 30` waits for
+ * and after a rename. The macros (`z20 macros --json`, slow: each one is
+ * read on its own) only when asked for; a change to one comes back from
+ * z20 as it was stored. In between, `z20 events --json --wait 30` waits for
  * what the keyboard reports on its own (a profile or Game Mode changed with
  * its keys) and reads again at once. Every action runs z20 and reads again
  * when it's done.
@@ -40,12 +42,18 @@ QtObject {
     // z20 profile --json ([{profile, name, active}]) and z20 presence settings --json.
     property var profiles: []
     property var presenceSettings: null
+    // z20 macros --json ({"N": {name, actions}}); null until refreshMacros() read them.
+    property var macros: null
     // The distance readings of the last two minutes: [{t (ms), mm}].
     property var distances: []
     // Why there is no status (no keyboard, no z20) or no profile names, and the last failed command.
     property string readError: ""
     property string detailsError: ""
+    property string macrosError: ""
     property string commandError: ""
+
+    // A macro was stored (new, edited or renamed) as number n.
+    signal macroStored(int n)
 
     readonly property bool gameMode: !!status && status.game_mode
     readonly property int profile: status ? status.profile : 0
@@ -86,6 +94,25 @@ QtObject {
     function setGameModeKeys(keys) { run(["game-mode", "keys", keys.length ? keys.join(",") : "none"]); }
     function renameProfile(n, name) { run(["profile", "rename", n, name]); }
 
+    // Macro n stored with the name and steps given ("A, wait 20 ms, B"; null: as they are); n 0: a new one.
+    function storeMacro(n, name, steps) {
+        if (!n) {
+            run(["macro", "new", name, steps, "--json"]);
+            return;
+        }
+        runAll((name === null ? [] : [["macro", "rename", n, name, "--json"]])
+               .concat(steps === null ? [] : [["macro", "edit", n, steps, "--json"]]));
+    }
+    function deleteMacro(n) { run(["macro", "delete", n, "--json"]); }
+    // A key (e1, capslock, ...; fn: its Fn layer) of the active profile runs macro n: once, times
+    // (N times), toggle or hold.
+    function setKeyMacro(key, n, mode, times, fn) {
+        const how = { times: ["--repeat", times], toggle: ["--toggle"], hold: ["--hold"] }[mode] || [];
+        run(["key", key, "macro", n].concat(how, fn ? ["--fn"] : []));
+    }
+    function setKeyOff(key, fn) { run(["key", key, "off"].concat(fn ? ["--fn"] : [])); }
+    function setKeyDefault(key, fn) { run(["key", key, "default"].concat(fn ? ["--fn"] : [])); }
+
     // The next profile up or down among the shown ones (all nine when none are).
     function stepProfile(step) {
         const list = shownProfiles.length ? shownProfiles : [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -117,6 +144,10 @@ QtObject {
         runner.connectSource(_detailCommand);
     }
 
+    function refreshMacros() {
+        runner.connectSource(_macrosCommand);
+    }
+
     function run(args) {
         runAll([args]);
     }
@@ -135,6 +166,7 @@ QtObject {
     readonly property string _detailCommand: _z20 + " profile --json || echo; " + _z20
         + " presence settings --json || echo"
     readonly property string _sensorCommand: _z20 + " sensor --json"
+    readonly property string _macrosCommand: _z20 + " macros --json"
     readonly property string _eventCommand: _z20 + " events --json --wait 30"
     readonly property string _osdCommand: "qdbus6 org.kde.plasmashell /org/kde/osdService "
         + "org.kde.osdService.showText input-gaming " + _quote(i18n("Game Mode on"))
@@ -172,6 +204,32 @@ QtObject {
         presenceActive = (lines[2] || "").trim() === "active";
         readError = status ? "" : ((data.stderr || "").trim().split("\n")[0].replace(/^z20: /, "")
                                    || i18n("No answer from z20"));
+    }
+
+    function _readMacros(data) {
+        const read = _parse(data.stdout);
+        macros = read || macros;
+        macrosError = read ? "" : ((data.stderr || "").trim().split("\n").pop().replace(/^z20: /, "")
+                                   || i18n("No answer from z20"));
+    }
+
+    // z20 macro ... --json prints the macro as stored, or {macro, deleted}; the last line is the last
+    // command's (a rename can have worked before an edit failed).
+    function _macroDone(data) {
+        const done = _parse((data.stdout || "").trim().split("\n").pop());
+        if (!done) {
+            return;
+        }
+        const list = Object.assign({}, macros || {});
+        if (done.deleted) {
+            delete list[done.macro];
+        } else {
+            list[done.macro] = { name: done.name, actions: done.actions };
+        }
+        macros = list;
+        if (data["exit code"] === 0 && !done.deleted) {
+            macroStored(done.macro);
+        }
     }
 
     function _readDetails(data) {
@@ -240,6 +298,10 @@ QtObject {
                 z20._readDetails(data);
                 return;
             }
+            if (source === z20._macrosCommand) {
+                z20._readMacros(data);
+                return;
+            }
             if (source === z20._sensorCommand) {
                 if (data["exit code"] === 0) {
                     z20._setSensor(z20._parse(data.stdout));
@@ -261,6 +323,11 @@ QtObject {
                 const message = (data.stderr || "").trim().split("\n").pop().replace(/^z20: /, "");
                 z20.commandError = message || i18n("Command failed: %1", source.replace(/ #\d+$/, ""));
                 errorTimeout.restart();
+            } else {
+                z20.commandError = "";  // what went wrong before went right now, or doesn't matter any more
+            }
+            if (source.startsWith(z20._z20 + " 'macro' ")) {
+                z20._macroDone(data);
             }
             z20.refresh();
             if (source.includes("'profile' 'rename'")) {
