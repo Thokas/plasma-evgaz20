@@ -35,6 +35,13 @@ RowLayout {
     readonly property var names: JSON.parse(namesText)
     readonly property bool isMacro: !!now && now.function === "macro"
     readonly property var run: Macros.runOf(isMacro ? now.run : "")
+    // What was just chosen here ({macro, mode, times}; macro 0: nothing, or as from the factory) until a read
+    // has it (z20.settled), so a second change right after the first builds on it.
+    property var wanted: null
+    readonly property bool runsMacro: wanted ? wanted.macro > 0 : isMacro
+    readonly property int macroNow: wanted ? wanted.macro : isMacro ? now.macro : 0
+    readonly property string modeNow: wanted ? wanted.mode : run.mode
+    readonly property int timesNow: wanted ? wanted.times : run.times
     // Nothing (or as from the factory) or a stored macro; first what the key does now where it's neither.
     readonly property var choices: {
         const list = [{ macro: 0, text: eKey ? i18n("Nothing") : i18n("As from the factory") }]
@@ -42,15 +49,20 @@ RowLayout {
         return now && !isMacro && !(eKey && now.function === "disabled") ? [{ macro: -1, text: now.text }].concat(list)
                                                                           : list;
     }
-    readonly property int chosen: choices.findIndex(c =>
-        c.macro === (isMacro ? now.macro : !now || eKey && now.function === "disabled" ? 0 : -1))
+    readonly property int chosen: choices.findIndex(c => c.macro === (wanted ? wanted.macro : isMacro ? now.macro
+        : !now || eKey && now.function === "disabled" ? 0 : -1))
     readonly property var runModes: [
         { mode: "once", text: i18n("Once") },
         { mode: "times", text: i18n("Repeat") },
         { mode: "toggle", text: i18n("Toggle") },
         { mode: "hold", text: i18n("While held") }
     ]
-    readonly property int runIndex: runModes.findIndex(m => m.mode === run.mode)
+    readonly property int runIndex: runModes.findIndex(m => m.mode === modeNow)
+
+    Connections {
+        target: row.z20
+        function onSettled() { row.wanted = null; }
+    }
 
     PlasmaComponents3.Label {
         text: row.label
@@ -73,19 +85,24 @@ RowLayout {
             } else if (c.macro === 0) {
                 row.z20.setKeyDefault(row.key, row.fn);
             } else if (c.macro > 0) {
-                row.z20.setKeyMacro(row.key, c.macro, row.run.mode || "once", row.run.times, row.fn);
+                row.z20.setKeyMacro(row.key, c.macro, row.modeNow || "once", row.timesNow, row.fn);
+            }
+            if (c.macro >= 0) {
+                row.wanted = { macro: c.macro, mode: row.modeNow || "once", times: row.timesNow };
             }
             currentIndex = Qt.binding(() => row.chosen);
         }
     }
     PlasmaComponents3.ComboBox {
-        visible: row.isMacro
+        visible: row.runsMacro
         model: row.runModes.map(m => m.text)
         currentIndex: row.runIndex
         // One of Unleash's own run modes shows by its name.
         displayText: currentIndex < 0 && row.isMacro ? row.now.run : currentText
         onActivated: index => {
-            row.z20.setKeyMacro(row.key, row.now.macro, row.runModes[index].mode, row.run.times, row.fn);
+            const mode = row.runModes[index].mode;
+            row.z20.setKeyMacro(row.key, row.macroNow, mode, row.timesNow, row.fn);
+            row.wanted = { macro: row.macroNow, mode: mode, times: row.timesNow };
             currentIndex = Qt.binding(() => row.runIndex);
         }
 
@@ -95,11 +112,11 @@ RowLayout {
     }
     PlasmaComponents3.SpinBox {
         id: times
-        visible: row.isMacro && row.run.mode === "times"
+        visible: row.runsMacro && row.modeNow === "times"
         from: 2
         to: 255
         editable: true
-        value: row.run.times
+        value: row.timesNow
         Layout.preferredWidth: Kirigami.Units.gridUnit * 4
         // Written a moment after the last change, not on each step up or down.
         onValueModified: timesTimer.restart()
@@ -110,7 +127,12 @@ RowLayout {
         Timer {
             id: timesTimer
             interval: 1000
-            onTriggered: if (times.value !== row.run.times) row.z20.setKeyMacro(row.key, row.now.macro, "times", times.value, row.fn)
+            onTriggered: {
+                if (times.value !== row.timesNow) {
+                    row.z20.setKeyMacro(row.key, row.macroNow, "times", times.value, row.fn);
+                    row.wanted = { macro: row.macroNow, mode: "times", times: times.value };
+                }
+            }
         }
     }
 }

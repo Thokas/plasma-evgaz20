@@ -14,11 +14,10 @@ ColumnLayout {
     id: section
 
     property var z20
-    readonly property var status: z20 ? z20.status : null
     readonly property var shown: {
         const list = z20.shownProfiles.slice();
-        if (status && list.indexOf(status.profile) < 0) {
-            list.push(status.profile);
+        if (z20.profile && list.indexOf(z20.profile) < 0) {
+            list.push(z20.profile);
         }
         return list.sort((a, b) => a - b);
     }
@@ -55,7 +54,7 @@ ColumnLayout {
                     delegate: PlasmaComponents3.MenuItem {
                         text: i18n("%1  %2", index + 1, section.z20.profileName(index + 1))
                         checkable: true
-                        checked: !!section.status && section.status.profile === index + 1
+                        checked: section.z20.profile === index + 1
                         onTriggered: section.z20.setProfile(index + 1)
                     }
                     onObjectAdded: (index, object) => menu.insertItem(index, object)
@@ -82,7 +81,7 @@ ColumnLayout {
 
             PlasmaComponents3.Button {
                 text: section.label(modelData)
-                checked: !!section.status && section.status.profile === modelData
+                checked: section.z20.profile === modelData
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1  // equal columns
                 onClicked: section.z20.setProfile(modelData)
@@ -102,10 +101,9 @@ ColumnLayout {
         }
         PlasmaComponents3.Switch {
             checked: section.z20.gameMode
-            text: section.status && section.status.game_mode_blocks.length
-                ? i18n("blocks %1", section.status.game_mode_blocks.join(", ")) : ""
+            text: section.z20.gameModeBlocks.length ? i18n("blocks %1", section.z20.gameModeBlocks.join(", ")) : ""
             onToggled: {
-                section.z20.toggleGameMode();
+                section.z20.setGameMode(checked);
                 checked = Qt.binding(() => section.z20.gameMode);
             }
         }

@@ -24,6 +24,9 @@ PlasmoidItem {
     Lib.Z20Data {
         id: z20Data
         fast: root.expanded || Plasmoid.formFactor === PlasmaCore.Types.Planar
+        watchSensor: true
+        watchEvents: true
+        showOsd: true
         shownProfiles: Plasmoid.configuration.shownProfiles.split(",").map(Number).filter(n => n >= 1 && n <= 9)
     }
 

@@ -43,8 +43,20 @@ KCM.SimpleKCM {
         { id: "sleep", text: i18n("Sleep") }
     ]
 
+    // What was just set here ({leave, come, keyboardLeave, keyboardAfter}) until a read has it (z20.settled),
+    // so a second change right after the first builds on it.
+    property var wanted: ({})
+    readonly property var leaveList: wanted.leave || (settings ? settings.leave : [])
+    readonly property var comeList: wanted.come || (settings ? settings.come : [])
+    readonly property string keyboardLeave: wanted.keyboardLeave || (sensor ? sensor.leave : "")
+    readonly property int keyboardAfter: wanted.keyboardAfter || (sensor ? sensor.leave_after_s : 10)
+
+    function want(changes) {
+        wanted = Object.assign({}, wanted, changes);
+    }
+
     function leaves(id) {
-        return !!settings && settings.leave.some(a => a.action === id);
+        return leaveList.some(a => a.action === id);
     }
 
     function actionList(list) {
@@ -54,20 +66,28 @@ KCM.SimpleKCM {
     // One action on or off when you leave; the others keep their delays. Pausing media goes with resuming it,
     // the screens off with waking them.
     function setLeave(id, on) {
-        const leave = settings.leave.filter(a => a.action !== id).concat(on ? [{ action: id, after_s: 0 }] : []);
+        const leave = leaveList.filter(a => a.action !== id).concat(on ? [{ action: id, after_s: 0 }] : []);
         const changes = ["leave", actionList(leave)];
+        let come = comeList;
         const back = { "pause-media": "resume-media", "screen-off": "wake" }[id];
-        const has = !!back && settings.come.some(a => a.action === back);
+        const has = !!back && comeList.some(a => a.action === back);
         if (back && on !== has && (on || back === "resume-media")) {
-            const come = settings.come.filter(a => a.action !== back).concat(on ? [{ action: back, after_s: 0 }] : []);
+            come = comeList.filter(a => a.action !== back).concat(on ? [{ action: back, after_s: 0 }] : []);
             changes.push("come", actionList(come));
         }
         z20.setPresence(changes);
+        want({ leave: leave, come: come });
+    }
+
+    function setKeyboardLeave(action, seconds) {
+        z20.setSensorLeave(action, seconds);
+        want({ keyboardLeave: action, keyboardAfter: seconds });
     }
 
     Lib.Z20Data {
         id: z20
         fast: true
+        onSettled: page.wanted = ({})
     }
 
     // Spin boxes send their value once it has stood still a moment, not at every step.
@@ -83,8 +103,8 @@ KCM.SimpleKCM {
         id: keyboardAfter
         interval: 1000
         onTriggered: {
-            z20.setSensorLeave(page.sensor.leave, keyboardAfterBox.value);
-            keyboardAfterBox.value = Qt.binding(() => page.sensor ? page.sensor.leave_after_s : 10);
+            page.setKeyboardLeave(page.keyboardLeave, keyboardAfterBox.value);
+            keyboardAfterBox.value = Qt.binding(() => page.keyboardAfter);
         }
     }
 
@@ -207,11 +227,10 @@ KCM.SimpleKCM {
             Kirigami.FormData.label: i18n("When you leave:")
             enabled: !!page.sensor
             model: page.keyboardChoices.map(c => c.text)
-            currentIndex: page.sensor ? page.keyboardChoices.findIndex(c => c.id === page.sensor.leave) : -1
+            currentIndex: page.keyboardChoices.findIndex(c => c.id === page.keyboardLeave)
             onActivated: index => {
-                z20.setSensorLeave(page.keyboardChoices[index].id, page.sensor.leave_after_s);
-                currentIndex = Qt.binding(() => page.sensor
-                    ? page.keyboardChoices.findIndex(c => c.id === page.sensor.leave) : -1);
+                page.setKeyboardLeave(page.keyboardChoices[index].id, page.keyboardAfter);
+                currentIndex = Qt.binding(() => page.keyboardChoices.findIndex(c => c.id === page.keyboardLeave));
             }
         }
         RowLayout {
@@ -219,10 +238,10 @@ KCM.SimpleKCM {
 
             QQC2.SpinBox {
                 id: keyboardAfterBox
-                enabled: !!page.sensor && page.sensor.leave !== "nothing"
+                enabled: !!page.sensor && page.keyboardLeave !== "nothing"
                 from: 10
                 to: 999
-                value: page.sensor ? page.sensor.leave_after_s : 10
+                value: page.keyboardAfter
                 onValueModified: keyboardAfter.restart()
             }
             QQC2.Label {

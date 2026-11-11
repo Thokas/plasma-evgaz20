@@ -3,24 +3,34 @@
  * (~/.local/bin/z20, https://github.com/Thokas/evga-z20).
  *
  * Reads `z20 status --json`, `z20 sensor --json` and whether the presence
- * service runs: every 3 s while `fast`, else every 30 s. While `fast`, the
- * sensor alone also every second, for the distance graph. The profile names
- * (`z20 profile --json`) and what the presence service does (`z20 presence
- * settings --json`) change rarely: read at the start, when `fast` turns on
- * and after a rename. The macros (`z20 macros --json`, slow: each one is
- * read on its own) only when asked for; a change to one comes back from
- * z20 as it was stored. In between, `z20 events --json --wait 30` waits for
- * what the keyboard reports on its own (a profile or Game Mode changed with
- * its keys) and reads again at once. Every action runs z20 and reads again
- * when it's done.
+ * service runs: every 3 s while `fast`, else every 30 s (`poll`). With
+ * `watchSensor`, while `fast`, the sensor alone also every second, for the
+ * distance graph. The profile names (`z20 profile --json`) and what the
+ * presence service does (`z20 presence settings --json`) change rarely: read
+ * at the start, when `fast` turns on and after a rename. The macros (`z20
+ * macros --json`, slow: each one is read on its own) only when asked for; a
+ * change to one comes back from z20 as it was stored. With `watchEvents`,
+ * `z20 events --json --wait 30` waits in between for what the keyboard
+ * reports on its own (a profile or Game Mode changed with its keys; media
+ * keys don't count) and reads again at once. Every action runs z20 and reads
+ * again when it's done. The widget turns all of this on, a settings page
+ * only what it shows.
  *
  * Commands go through the executable engine, one source per run:
  * connectSource() runs it, onNewData disconnects it again (as in Now
  * Playing's TabData). Actions get a serial number appended as a shell
- * comment, since a command still running isn't started a second time.
+ * comment, since a command still running isn't started a second time; a
+ * read asked for while the same read runs starts again once it's done. A
+ * status read that an action ended during is dropped, as it may show the
+ * keyboard from before the action; the read after the action follows.
  *
- * Game Mode switched on (with its key, the popup or z20) shows Plasma's OSD,
- * the volume keys' popup, which also shows over fullscreen games.
+ * Until a read shows what the actions sent (`settled`), the profile, Game
+ * Mode and the keys it blocks are the ones sent: a quick second change
+ * builds on the first, and switches don't flip back in between.
+ *
+ * With `showOsd`, Game Mode switched on (with its key, the popup or z20)
+ * shows Plasma's OSD, the volume keys' popup, which also shows over
+ * fullscreen games.
  */
 
 import QtQuick
@@ -32,6 +42,10 @@ QtObject {
     id: z20
 
     property bool fast: false
+    property bool poll: true
+    property bool watchSensor: false
+    property bool watchEvents: false
+    property bool showOsd: false
     // The profiles the popup offers (numbers 1-9); the wheel on the panel icon steps through these.
     property var shownProfiles: []
 
@@ -54,9 +68,15 @@ QtObject {
 
     // A macro was stored (new, edited or renamed) as number n.
     signal macroStored(int n)
+    // A read came in with every action so far in it: what was sent is what the keyboard has (or won't
+    // ever have, where an action failed).
+    signal settled()
 
-    readonly property bool gameMode: !!status && status.game_mode
-    readonly property int profile: status ? status.profile : 0
+    // As sent, until settled; else as read.
+    readonly property bool gameMode: _wanted.gameMode !== undefined ? _wanted.gameMode : !!status && status.game_mode
+    readonly property int profile: _wanted.profile || (status ? status.profile : 0)
+    // The keys Game Mode blocks, in the active profile.
+    readonly property var gameModeBlocks: _wanted.gameModeBlocks || (status ? status.game_mode_blocks : [])
     readonly property var lighting: status ? status.lighting : null
     // The software effect z20 animate runs over the lighting, or null.
     readonly property var animation: status ? status.animation || null : null
@@ -87,23 +107,34 @@ QtObject {
 
     // --- actions ---------------------------------------------------------
 
-    function setProfile(n) { run(["profile", n]); }
-    function toggleGameMode() { run(["game-mode", "toggle"]); }
+    // Options come before "--", values after it: a name or steps beginning with "-" aren't z20 options.
+    function setProfile(n) {
+        _want("profile", n);
+        run(["profile", n]);
+    }
+    function setGameMode(on) {
+        _want("gameMode", on);
+        run(["game-mode", on ? "on" : "off"]);
+    }
+    function toggleGameMode() { setGameMode(!gameMode); }
     function setNkro(on) { run(["nkro", on ? "on" : "off"]); }
     function setRate(hz) { run(["rate", hz]); }
-    function setGameModeKeys(keys) { run(["game-mode", "keys", keys.length ? keys.join(",") : "none"]); }
-    function renameProfile(n, name) { run(["profile", "rename", n, name]); }
+    function setGameModeKeys(keys) {
+        _want("gameModeBlocks", keys);
+        run(["game-mode", "keys", keys.length ? keys.join(",") : "none"]);
+    }
+    function renameProfile(n, name) { run(["profile", "--", "rename", n, name]); }
 
     // Macro n stored with the name and steps given ("A, wait 20 ms, B"; null: as they are); n 0: a new one.
     function storeMacro(n, name, steps) {
         if (!n) {
-            run(["macro", "new", name, steps, "--json"]);
+            run(["macro", "--json", "--", "new", name, steps]);
             return;
         }
-        runAll((name === null ? [] : [["macro", "rename", n, name, "--json"]])
-               .concat(steps === null ? [] : [["macro", "edit", n, steps, "--json"]]));
+        runAll((name === null ? [] : [["macro", "--json", "--", "rename", n, name]])
+               .concat(steps === null ? [] : [["macro", "--json", "--", "edit", n, steps]]));
     }
-    function deleteMacro(n) { run(["macro", "delete", n, "--json"]); }
+    function deleteMacro(n) { run(["macro", "--json", "--", "delete", n]); }
     // A key (e1, capslock, ...; fn: its Fn layer) of the active profile runs macro n: once, times
     // (N times), toggle or hold.
     function setKeyMacro(key, n, mode, times, fn) {
@@ -113,7 +144,8 @@ QtObject {
     function setKeyOff(key, fn) { run(["key", key, "off"].concat(fn ? ["--fn"] : [])); }
     function setKeyDefault(key, fn) { run(["key", key, "default"].concat(fn ? ["--fn"] : [])); }
 
-    // The next profile up or down among the shown ones (all nine when none are).
+    // The next profile up or down among the shown ones (all nine when none are). Quick steps (the wheel)
+    // add up; the keyboard gets where they ended a moment after the last.
     function stepProfile(step) {
         const list = shownProfiles.length ? shownProfiles : [1, 2, 3, 4, 5, 6, 7, 8, 9];
         if (!profile) {
@@ -124,7 +156,8 @@ QtObject {
             const higher = list.findIndex(n => n > profile);
             i = (higher < 0 ? list.length : higher) - (step > 0 ? 1 : 0);
         }
-        setProfile(list[(i + step + list.length) % list.length]);
+        _want("profile", list[(i + step + list.length) % list.length]);
+        stepped.restart();
     }
 
     // A lighting preset (see presets.js); live: only for now, to try it.
@@ -136,20 +169,20 @@ QtObject {
         _exec("systemctl --user " + (on ? "enable --now" : "disable --now") + " z20-presence.service");
     }
     // Settings of presence.ini, [key, value, key, value, ...] ("leave", "lock, pause-media", "away light", "").
-    function setPresence(changes) { run(["presence", "set"].concat(changes, ["--json"])); }
+    function setPresence(changes) { run(["presence", "--json", "--", "set"].concat(changes)); }
     // What the keyboard itself does when you leave (nothing, dark, lock, sleep), after seconds; active profile.
     function setSensorLeave(action, seconds) { run(["sensor", "leave", action, seconds]); }
 
     function refresh() {
-        runner.connectSource(_readCommand);
+        _start(_readCommand);
     }
 
     function refreshDetails() {
-        runner.connectSource(_detailCommand);
+        _start(_detailCommand);
     }
 
     function refreshMacros() {
-        runner.connectSource(_macrosCommand);
+        _start(_macrosCommand);
     }
 
     function run(args) {
@@ -175,14 +208,55 @@ QtObject {
     readonly property string _osdCommand: "qdbus6 org.kde.plasmashell /org/kde/osdService "
         + "org.kde.osdService.showText input-gaming " + _quote(i18n("Game Mode on"))
     property int _serial: 0
+    // What actions sent and no read has shown yet: {profile, gameMode, gameModeBlocks}, as far as sent.
+    property var _wanted: ({})
+    property int _busy: 0  // actions running or waiting
+    property var _queue: []  // actions waiting for the one that runs
+    property int _done: 0  // actions done so far
+    property int _readFrom: 0  // _done when the status read that runs began
+    // Reads asked for while the same read ran.
+    property var _again: []
 
     function _quote(arg) {
         return "'" + String(arg).replace(/'/g, "'\\''") + "'";
     }
 
+    function _want(key, value) {
+        const wanted = Object.assign({}, _wanted);
+        wanted[key] = value;
+        _wanted = wanted;
+    }
+
     function _exec(command) {
         _serial += 1;
-        runner.connectSource(command + " #" + _serial);
+        _busy += 1;
+        _queue = _queue.concat([command + " #" + _serial]);
+        if (_busy === 1) {
+            _next();
+        }
+    }
+
+    // Actions run one at a time, in the order they came: each builds on the one before.
+    function _next() {
+        if (_queue.length) {
+            const command = _queue[0];
+            _queue = _queue.slice(1);
+            runner.connectSource(command);
+        }
+    }
+
+    // A read, or, while the same one runs (connectSource() does nothing then), once more after it.
+    function _start(command) {
+        if (runner.connectedSources.indexOf(command) >= 0) {
+            if (_again.indexOf(command) < 0) {
+                _again = _again.concat([command]);
+            }
+            return;
+        }
+        if (command === _readCommand) {
+            _readFrom = _done;
+        }
+        runner.connectSource(command);
     }
 
     function _parse(line) {
@@ -251,18 +325,19 @@ QtObject {
         if (!status) {
             return;  // keyboard gone or z20 busy: compare with the last read once it's back
         }
-        if (status.game_mode && _lastGameMode === false) {
+        if (showOsd && status.game_mode && _lastGameMode === false) {
             runner.connectSource(_osdCommand);
         }
         _lastGameMode = status.game_mode;
     }
 
+    onSettled: _wanted = ({})
     onFastChanged: if (fast) { refresh(); refreshDetails(); }
     Component.onCompleted: refreshDetails()
 
     property Timer _poll: Timer {
         interval: z20.fast ? 3000 : 30000
-        running: true
+        running: z20.poll
         repeat: true
         triggeredOnStart: true
         onTriggered: z20.refresh()
@@ -270,7 +345,7 @@ QtObject {
 
     property Timer _sensorPoll: Timer {
         interval: 1000
-        running: z20.fast && !!z20.sensor && z20.sensor.on
+        running: z20.watchSensor && z20.fast && !!z20.sensor && z20.sensor.on
         repeat: true
         onTriggered: runner.connectSource(z20._sensorCommand)
     }
@@ -279,8 +354,27 @@ QtObject {
     property Timer _events: Timer {
         id: events
         interval: 200
-        running: true
+        running: z20.watchEvents
         onTriggered: runner.connectSource(z20._eventCommand)
+    }
+
+    // The profile the wheel stepped to, sent once it stops.
+    property Timer _stepped: Timer {
+        id: stepped
+        interval: 250
+        onTriggered: z20.setProfile(z20.profile)
+    }
+
+    // Reads asked for again, a moment after they ended: the engine hands a source that just ended its
+    // old output for a few ms.
+    property Timer _againTimer: Timer {
+        id: againTimer
+        interval: 100
+        onTriggered: {
+            const list = z20._again;
+            z20._again = [];
+            list.forEach(command => z20._start(command));
+        }
     }
 
     property Timer _errorTimeout: Timer {
@@ -294,8 +388,16 @@ QtObject {
         engine: "executable"
         onNewData: (source, data) => {
             disconnectSource(source);
+            if (z20._again.indexOf(source) >= 0) {
+                againTimer.restart();
+            }
             if (source === z20._readCommand) {
-                z20._read(data);
+                if (z20._readFrom === z20._done) {  // else an action ended while it read: the next read is due
+                    z20._read(data);
+                    if (z20._busy === 0 && !stepped.running) {
+                        z20.settled();
+                    }
+                }
                 return;
             }
             if (source === z20._detailCommand) {
@@ -316,13 +418,18 @@ QtObject {
                 return;
             }
             if (source === z20._eventCommand) {
-                if ((data.stdout || "").trim()) {
+                // Media keys change nothing on the keyboard (z20 leaves them out from 2026-11-11 on).
+                const reported = (data.stdout || "").trim().split("\n").map(z20._parse);
+                if (reported.some(e => e && e.event !== "media key")) {
                     z20.refresh();
                 }
                 events.interval = data["exit code"] === 0 ? 200 : 30000;
                 events.restart();
                 return;
             }
+            z20._busy -= 1;
+            z20._done += 1;
+            z20._next();
             if (data["exit code"] !== 0) {
                 const message = (data.stderr || "").trim().split("\n").pop().replace(/^z20: /, "");
                 z20.commandError = message || i18n("Command failed: %1", source.replace(/ #\d+$/, ""));
@@ -333,11 +440,11 @@ QtObject {
             if (source.startsWith(z20._z20 + " 'macro' ")) {
                 z20._macroDone(data);
             }
-            if (source.startsWith(z20._z20 + " 'presence' 'set' ")) {  // prints the settings as they are now
+            if (source.startsWith(z20._z20 + " 'presence' '--json' '--' 'set' ")) {  // prints the settings now
                 z20.presenceSettings = z20._parse(data.stdout) || z20.presenceSettings;
             }
             z20.refresh();
-            if (source.includes("'profile' 'rename'")) {
+            if (source.startsWith(z20._z20 + " 'profile' '--' 'rename' ")) {
                 z20.refreshDetails();
             }
         }

@@ -67,8 +67,10 @@ KCM.SimpleKCM {
         update(list);
     }
 
+    // Only to try presets on the keyboard: no reading in between.
     Lib.Z20Data {
         id: z20
+        poll: false
     }
 
     ColorDialog {

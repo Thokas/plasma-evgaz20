@@ -72,8 +72,11 @@ panel or the system tray.
 
 It reads the keyboard every 3 s while the popup is open (the distance every
 second, for the graph), every 30 s otherwise, and at once when the keyboard
-reports a change made with its own keys (`z20 events`). Every change runs
-`z20`. Without a keyboard, the widget sits among the tray's hidden entries.
+reports a change made with its own keys (`z20 events`; media keys and the
+volume wheel don't count). Every change runs `z20`, one at a time in the
+order you made them; until a read shows a change, the popup shows it as
+made, so a quick second change builds on the first. Without a keyboard, the
+widget sits among the tray's hidden entries.
 
 > [!WARNING]
 > **Written entirely by AI.** Like z20, this widget was written by an AI

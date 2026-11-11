@@ -27,8 +27,9 @@ KCM.SimpleKCM {
         { id: "lshift", text: i18n("Left Shift") }
     ]
 
+    // As sent until a read has it, so a second box ticked right after the first adds to it.
     function blocked(id) {
-        return !!status && status.game_mode_blocks.indexOf(id) >= 0;
+        return z20.gameModeBlocks.indexOf(id) >= 0;
     }
 
     Lib.Z20Data {
