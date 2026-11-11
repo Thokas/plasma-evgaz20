@@ -1,6 +1,7 @@
 /*
- * The presence sensor: whether someone is at the desk, the distance over
- * the last two minutes against the distance that counts as present, what
+ * The presence sensor: whether someone is at the desk (or nothing is in its
+ * view: leaning back out of its beam, or nobody), the distance over the last
+ * two minutes against the distance that counts as present, what
  * the keyboard itself does when you leave, and the switch for z20's
  * presence service with what it does (~/.config/z20/presence.ini, set up in
  * the settings, "Presence").
@@ -29,7 +30,9 @@ ColumnLayout {
     }
     readonly property bool measured: !!sensor && sensor.on && sensor.distance_mm !== undefined
     readonly property real within: z20 ? z20.presentWithinMm : 0
-    readonly property bool present: measured && sensor.distance_mm < within
+    // As the presence service goes by it: near, far or nothing in view (see Z20Data.seen).
+    readonly property bool present: !!z20 && z20.seen === "near"
+    readonly property bool outOfView: !!z20 && z20.seen === "nothing"
     readonly property bool nothing: measured && sensor.distance_mm >= 65000  // nothing in range
 
     readonly property var actionText: ({
@@ -84,13 +87,14 @@ ColumnLayout {
 
         Kirigami.Icon {
             source: !section.sensor || !section.sensor.on ? "user-offline"
-                : section.present ? "user-online" : "user-away"
+                : section.outOfView ? "user-invisible" : section.present ? "user-online" : "user-away"
             implicitWidth: Kirigami.Units.iconSizes.smallMedium
             implicitHeight: implicitWidth
         }
         PlasmaComponents3.Label {
             text: !section.sensor ? "" : !section.sensor.on ? i18n("Sensor off in this profile")
                 : !section.measured ? i18n("Reading…")
+                : section.outOfView ? i18n("Nothing in view · leaning back, or nobody there")
                 : section.present ? i18n("At the desk · %1 cm", Math.round(section.sensor.distance_mm / 10))
                 : section.nothing ? i18n("Away · nothing in front of the sensor")
                 : i18n("Away · %1 cm", Math.round(section.sensor.distance_mm / 10))
@@ -99,7 +103,8 @@ ColumnLayout {
         }
     }
 
-    // The last two minutes: distance up, the keyboard at the bottom; inside the band counts as present.
+    // The last two minutes: distance up, the keyboard at the bottom; inside the band counts as present. Where
+    // nothing was in view, the line leaves a gap: the distance then means nothing.
     Canvas {
         id: graph
 
@@ -131,16 +136,20 @@ ColumnLayout {
             ctx.setLineDash([]);
 
             const now = Date.now();
-            const points = section.z20.distances.map(d => [(d.t - now + 120000) / 120000 * (width - 4), yOf(d.mm)]);
+            const points = section.z20.distances.map(d => [(d.t - now + 120000) / 120000 * (width - 4), yOf(d.mm),
+                                                           d.inView !== false]);
             if (!points.length) {
                 return;
             }
             ctx.strokeStyle = Qt.rgba(lineColor.r, lineColor.g, lineColor.b, 0.8);
             ctx.lineWidth = 1.5;
             ctx.beginPath();
-            points.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+            points.forEach((p, i) => p[2] && (i && points[i - 1][2] ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
             ctx.stroke();
             const last = points[points.length - 1];
+            if (!last[2]) {
+                return;
+            }
             ctx.fillStyle = section.present ? goodColor : awayColor;
             ctx.beginPath();
             ctx.arc(last[0], last[1], 3, 0, 2 * Math.PI);

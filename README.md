@@ -22,7 +22,9 @@ panel or the system tray.
     Fn layer that runs one, and "Another Key" puts a macro on any key.
     Below, how many other keys differ from the factory (the pencil there
     leads to the macros)
-  - whether someone is at the desk, the distance over the last two
+  - whether someone is at the desk, or that nothing is in the sensor's
+    view (its beam is narrow: leaning back can take you out of it, and the
+    distance it then reports means nothing), the distance over the last two
     minutes against the distance that counts as present, what the keyboard
     does when you leave, and a switch for z20's presence service with what
     it does (lock the screen, a lighting while you're away and the like,

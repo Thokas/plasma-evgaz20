@@ -58,7 +58,7 @@ QtObject {
     property var presenceSettings: null
     // z20 macros --json ({"N": {name, actions}}); null until refreshMacros() read them.
     property var macros: null
-    // The distance readings of the last two minutes: [{t (ms), mm}].
+    // The distance readings of the last two minutes: [{t (ms), mm, inView}].
     property var distances: []
     // Why there is no status (no keyboard, no z20) or no profile names, and the last failed command.
     property string readError: ""
@@ -83,6 +83,21 @@ QtObject {
     // Present: closer than the distance the presence service goes by (its own, or the keyboard's).
     readonly property real presentWithinMm: presenceSettings && presenceSettings.distance_cm
         ? presenceSettings.distance_cm * 10 : sensor ? sensor.distance_cm * 10 : 0
+    // What the sensor sees, as the presence service goes by it: "near" or "far" (than presentWithinMm),
+    // "nothing" (nothing in its view: leaning back out of the beam, or nobody; the distance then means
+    // nothing) or "" (off, or not read). With the keyboard's own distance, its verdict on the newest echo.
+    readonly property string seen: {
+        if (!sensor || !sensor.on || sensor.distance_mm === undefined) {
+            return "";
+        }
+        if (sensor.in_view === false) {
+            return "nothing";
+        }
+        if (!sensor.seen || presenceSettings && presenceSettings.distance_cm) {  // older z20, or a distance of its own
+            return sensor.distance_mm < presentWithinMm ? "near" : "far";
+        }
+        return sensor.seen.find(s => s !== "nothing") === "near" ? "near" : "far";
+    }
     readonly property string summary: {
         if (!status) {
             return readError;
@@ -92,10 +107,9 @@ QtObject {
         if (status.game_mode) {
             lines.push(i18n("Game Mode on"));
         }
-        if (sensor && sensor.on && sensor.distance_mm !== undefined) {
-            lines.push(sensor.distance_mm < presentWithinMm
-                ? i18n("Someone at the desk (%1 cm)", Math.round(sensor.distance_mm / 10))
-                : i18n("Nobody at the desk"));
+        if (seen !== "") {
+            lines.push(seen === "near" ? i18n("Someone at the desk (%1 cm)", Math.round(sensor.distance_mm / 10))
+                : seen === "far" ? i18n("Nobody at the desk") : i18n("Nothing in the presence sensor's view"));
         }
         return lines.join("\n");
     }
@@ -271,7 +285,8 @@ QtObject {
         sensor = s;
         if (s && s.on && s.distance_mm !== undefined) {
             const now = Date.now();
-            distances = distances.filter(d => now - d.t < 120000).concat([{ t: now, mm: s.distance_mm }]);
+            distances = distances.filter(d => now - d.t < 120000)
+                .concat([{ t: now, mm: s.distance_mm, inView: s.in_view !== false }]);
         }
     }
 
