@@ -2,13 +2,17 @@
  * The presence sensor: whether someone is at the desk, the distance over
  * the last two minutes against the distance that counts as present, what
  * the keyboard itself does when you leave, and the switch for z20's
- * presence service with what it does (~/.config/z20/presence.ini).
+ * presence service with what it does (~/.config/z20/presence.ini, set up in
+ * the settings, "Presence").
  */
 
 import QtQuick
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.components as PlasmaComponents3
+import org.kde.plasma.plasmoid
+
+import "lib/presets.js" as Presets
 
 ColumnLayout {
     id: section
@@ -16,6 +20,13 @@ ColumnLayout {
     property var z20
     readonly property var sensor: z20 ? z20.sensor : null
     readonly property var settings: z20 ? z20.presenceSettings : null
+    // The lighting the service shows while you are away: the preset's name, else the effect.
+    readonly property string awayLight: {
+        const light = settings ? settings.away_light || "" : "";
+        const preset = light ? Presets.parse(Plasmoid.configuration.presets).find(p => Presets.awayLight(p) === light)
+            : null;
+        return preset ? preset.name : light.split(" ")[1] || "";
+    }
     readonly property bool measured: !!sensor && sensor.on && sensor.distance_mm !== undefined
     readonly property real within: z20 ? z20.presentWithinMm : 0
     readonly property bool present: measured && sensor.distance_mm < within
@@ -30,9 +41,12 @@ ColumnLayout {
         "turn off": i18n("turns off")
     })
 
-    function steps(list, run) {
+    function steps(list, run, light) {
         const parts = list.map(a => (actionText[a.action] || a.action)
                                     + (a.after_s ? " " + i18n("after %1 s", a.after_s) : ""));
+        if (light) {
+            parts.push(light);
+        }
         if (run) {
             parts.push(i18n("your command"));
         }
@@ -41,12 +55,27 @@ ColumnLayout {
 
     // What the service does, as presence.ini has it.
     readonly property string serviceText: !settings ? ""
-        : i18n("Away %1 s: %2. Back %3 s: %4.", settings.leave_after_s, steps(settings.leave, settings.leave_run),
-               settings.come_after_s, steps(settings.come, settings.come_run))
+        : i18n("Away %1 s: %2. Back %3 s: %4.", settings.leave_after_s,
+               steps(settings.leave, settings.leave_run, awayLight ? i18n("lighting \"%1\"", awayLight) : ""),
+               settings.come_after_s,
+               steps(settings.come, settings.come_run, awayLight ? i18n("the stored lighting") : ""))
 
-    Kirigami.Heading {
-        level: 4
-        text: i18n("Presence")
+    RowLayout {
+        Layout.fillWidth: true
+
+        Kirigami.Heading {
+            level: 4
+            text: i18n("Presence")
+            Layout.fillWidth: true
+        }
+        PlasmaComponents3.ToolButton {
+            icon.name: "document-edit"
+            onClicked: Plasmoid.internalAction("configure").trigger()
+
+            PlasmaComponents3.ToolTip {
+                text: i18n("What happens when you leave: lock, lighting, … (settings, \"Presence\")")
+            }
+        }
     }
 
     RowLayout {
@@ -162,7 +191,8 @@ ColumnLayout {
 
             PlasmaComponents3.Label {
                 text: section.settings && section.settings.leave.some(a => a.action === "lock")
-                    ? i18n("Lock the screen when I leave") : i18n("Act on the desktop when I leave")
+                    ? i18n("Lock the screen when I leave")
+                    : section.awayLight ? i18n("Light the keyboard when I leave") : i18n("Act on the desktop when I leave")
                 wrapMode: Text.Wrap
                 Layout.fillWidth: true
             }
@@ -184,7 +214,7 @@ ColumnLayout {
             }
 
             PlasmaComponents3.ToolTip {
-                text: i18n("The z20-presence service; what it does is set in ~/.config/z20/presence.ini")
+                text: i18n("The z20-presence service; what it does is set in the settings, \"Presence\"")
             }
         }
     }

@@ -18,6 +18,11 @@ ConfigModel {
         source: "ConfigMacros.qml"
     }
     ConfigCategory {
+        name: i18n("Presence")
+        icon: "user-away"
+        source: "ConfigPresence.qml"
+    }
+    ConfigCategory {
         name: i18n("Keyboard")
         icon: "input-keyboard"
         source: "ConfigKeyboard.qml"

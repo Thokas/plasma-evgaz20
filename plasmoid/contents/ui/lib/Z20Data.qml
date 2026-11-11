@@ -135,6 +135,10 @@ QtObject {
     function setPresenceService(on) {
         _exec("systemctl --user " + (on ? "enable --now" : "disable --now") + " z20-presence.service");
     }
+    // Settings of presence.ini, [key, value, key, value, ...] ("leave", "lock, pause-media", "away light", "").
+    function setPresence(changes) { run(["presence", "set"].concat(changes, ["--json"])); }
+    // What the keyboard itself does when you leave (nothing, dark, lock, sleep), after seconds; active profile.
+    function setSensorLeave(action, seconds) { run(["sensor", "leave", action, seconds]); }
 
     function refresh() {
         runner.connectSource(_readCommand);
@@ -328,6 +332,9 @@ QtObject {
             }
             if (source.startsWith(z20._z20 + " 'macro' ")) {
                 z20._macroDone(data);
+            }
+            if (source.startsWith(z20._z20 + " 'presence' 'set' ")) {  // prints the settings as they are now
+                z20.presenceSettings = z20._parse(data.stdout) || z20.presenceSettings;
             }
             z20.refresh();
             if (source.includes("'profile' 'rename'")) {

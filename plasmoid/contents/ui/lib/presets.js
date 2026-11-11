@@ -78,6 +78,13 @@ function commands(preset, live) {
 // Back to what is stored: the saved software effect (or none) and the profile's lighting.
 var RESTORE = [["animate", "reload"], ["light", "reload"]];
 
+// A preset as presence.ini's "away light", which the presence service shows while you are away:
+// its z20 light or animate arguments without --live, as z20 presence settings prints them.
+function awayLight(preset) {
+    var all = commands(preset, true);
+    return all[all.length - 1].filter(function (a) { return a !== "--live"; }).join(" ");
+}
+
 // The stored list, or the defaults when there is none yet.
 function parse(text) {
     try {

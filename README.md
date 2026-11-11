@@ -25,10 +25,11 @@ panel or the system tray.
   - whether someone is at the desk, the distance over the last two
     minutes against the distance that counts as present, what the keyboard
     does when you leave, and a switch for z20's presence service with what
-    it does (lock the screen and the like, set up in
-    `~/.config/z20/presence.ini`)
+    it does (lock the screen, a lighting while you're away and the like,
+    set up in the settings)
 - **Settings** (the configure button at the top of the popup, the pencils
-  next to "Lighting" and "Macro keys", or right-click, Configure):
+  next to "Lighting", "Macro keys" and "Presence", or right-click,
+  Configure):
   - **Lighting presets:** build the presets the popup offers: effect,
     up to 8 colors, brightness, speed and direction. "Try on the keyboard"
     shows one without storing it; "Back to stored" undoes that. Comes with
@@ -51,6 +52,17 @@ panel or the system tray.
     lines, as `z20 macros` prints them (`LShift down`, `H`, `wait 20 ms`),
     to paste or type. "Store in the Keyboard" writes the macro; z20 keeps
     the one it replaces in `~/.local/state/z20/previous`.
+  - **Presence:** what z20's presence service does each time you leave the
+    desk and come back: after how many seconds away you count as gone,
+    lock the screen, pause media (and play it on), the screens off, and
+    the keyboard's lighting while you're away, one of the lighting
+    presets, shown without being stored; the stored lighting comes back
+    with you. With nothing else ticked, a lighting is all that happens:
+    the keyboard lights up instead of the screen locking. Below, what the
+    keyboard itself does when you leave (lights off, Win+L, sleep), stored
+    in the active profile; it does that only the first time after being
+    plugged in. Written to `~/.config/z20/presence.ini` with
+    `z20 presence set`; these apply at once.
   - **Keyboard:** report rate, n-key rollover and the keys Game Mode
     blocks; these apply at once. N-key rollover on (the normal case) means
     any number of keys can be down at once; off limits it to six plus the
@@ -71,7 +83,7 @@ reports a change made with its own keys (`z20 events`). Every change runs
 ## Install
 
 Needs z20 installed (`~/.local/bin/z20`, with its udev rule; from
-2026-11-06 on, with `z20 animate`), see
+2026-11-11 on, with `z20 presence set`), see
 [evga-z20](https://github.com/Thokas/evga-z20).
 
 ```
