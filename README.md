@@ -17,6 +17,10 @@ panel or the system tray.
     are stored in the active profile; the software ones (aurora, fire,
     rain, ripples, scanner, gradient) run as z20's animate service, also
     after login
+  - the keyboard light: how bright the lighting is, of how it is set,
+    dark while Plasma has its keyboard light off (when the screen dims or
+    goes off); kept by z20's backlight service, which the slider starts
+    (needs z20 from 2026-11-12 on)
   - which macro E1–E5 run and how (once, a number of times, toggle,
     while held), changed right there; the same for every other key or
     Fn layer that runs one, and "Another Key" puts a macro on any key.

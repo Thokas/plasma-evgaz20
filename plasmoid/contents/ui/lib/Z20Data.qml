@@ -25,8 +25,8 @@
  * keyboard from before the action; the read after the action follows.
  *
  * Until a read shows what the actions sent (`settled`), the profile, Game
- * Mode and the keys it blocks are the ones sent: a quick second change
- * builds on the first, and switches don't flip back in between.
+ * Mode, the keys it blocks and the keyboard light are the ones sent: a quick
+ * second change builds on the first, and switches don't flip back in between.
  *
  * With `showOsd`, Game Mode switched on (with its key, the popup or z20)
  * shows Plasma's OSD, the volume keys' popup, which also shows over
@@ -80,6 +80,12 @@ QtObject {
     readonly property var lighting: status ? status.lighting : null
     // The software effect z20 animate runs over the lighting, or null.
     readonly property var animation: status ? status.animation || null : null
+    // The Z20's own keyboard light (z20 backlight): {percent, shown, off, dimmed, service, led}; null with a z20
+    // from before 2026-11-12.
+    readonly property var backlight: status ? status.backlight || null : null
+    // Its level in percent of how the lighting is set: as sent, until settled.
+    readonly property int backlightPercent: _wanted.backlight !== undefined ? _wanted.backlight
+        : backlight ? backlight.percent : 100
     // Present: closer than the distance the presence service goes by (its own, or the keyboard's).
     readonly property real presentWithinMm: presenceSettings && presenceSettings.distance_cm
         ? presenceSettings.distance_cm * 10 : sensor ? sensor.distance_cm * 10 : 0
@@ -178,6 +184,11 @@ QtObject {
     function applyPreset(preset, live) { runAll(Presets.commands(preset, live)); }
     // Back to the stored lighting (and the saved software effect, if any).
     function restoreLighting() { runAll(Presets.RESTORE); }
+    // The keyboard light at percent of how the lighting is set; z20 starts its service for it if need be.
+    function setBacklight(percent) {
+        _want("backlight", percent);
+        run(["backlight", percent]);
+    }
 
     function setPresenceService(on) {
         _exec("systemctl --user " + (on ? "enable --now" : "disable --now") + " z20-presence.service");
@@ -222,7 +233,7 @@ QtObject {
     readonly property string _osdCommand: "qdbus6 org.kde.plasmashell /org/kde/osdService "
         + "org.kde.osdService.showText input-gaming " + _quote(i18n("Game Mode on"))
     property int _serial: 0
-    // What actions sent and no read has shown yet: {profile, gameMode, gameModeBlocks}, as far as sent.
+    // What actions sent and no read has shown yet: {profile, gameMode, gameModeBlocks, backlight}, as far as sent.
     property var _wanted: ({})
     property int _busy: 0  // actions running or waiting
     property var _queue: []  // actions waiting for the one that runs

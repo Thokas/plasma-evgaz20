@@ -4,6 +4,11 @@
  * profile, software ones are saved as what z20's animate service runs. The
  * one applied last is marked while its effect still runs. Presets are
  * built in the settings ("Lighting presets").
+ *
+ * Below them the Z20's own keyboard light (z20 backlight): how bright the
+ * lighting is, of how it is set; dimmed with the screens when idle, dark
+ * while Plasma's keyboard light is off otherwise.
+ * Sent a moment after the slider stops, and when it's let go.
  */
 
 import QtQuick
@@ -84,6 +89,69 @@ ColumnLayout {
                     }
                 }
             }
+        }
+    }
+
+    RowLayout {
+        id: light
+
+        visible: !!section.z20 && !!section.z20.backlight
+        spacing: Kirigami.Units.smallSpacing
+        Layout.fillWidth: true
+
+        function send() {
+            const percent = Math.round(brightness.value);
+            if (percent !== section.z20.backlightPercent) {
+                section.z20.setBacklight(percent);
+            }
+            brightness.value = Qt.binding(() => section.z20.backlightPercent);
+        }
+
+        Kirigami.Icon {
+            source: "input-keyboard-brightness"
+            opacity: !section.z20 || !section.z20.backlight ? 1 : section.z20.backlight.off ? 0.4
+                : section.z20.backlight.dimmed ? 0.7 : 1
+            Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
+            Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
+        }
+        PlasmaComponents3.Slider {
+            id: brightness
+
+            from: 0
+            to: 100
+            stepSize: 5
+            value: section.z20 ? section.z20.backlightPercent : 100
+            Layout.fillWidth: true
+            onMoved: sendLater.restart()
+            onPressedChanged: {
+                if (!pressed) {
+                    sendLater.stop();
+                    light.send();
+                }
+            }
+
+            Timer {
+                id: sendLater
+                interval: 300
+                onTriggered: light.send()
+            }
+
+            PlasmaComponents3.ToolTip {
+                text: {
+                    const b = section.z20 ? section.z20.backlight : null;
+                    return !b ? "" : b.off ? i18n("Dark while Plasma's keyboard light is off; moving this lights it again")
+                        : b.dimmed ? i18n("At %1% while the screens are dimmed; moving this lights it fully again", b.shown)
+                        : !b.service ? i18n("The lighting shows as set: moving this starts the z20-backlight service, "
+                                            + "which keeps the brightness")
+                        : i18n("Keyboard light: how bright the lighting is, of how it is set. Dimmed with the screens "
+                               + "when you're away, dark when they go off or Plasma's keyboard light is turned off.");
+                }
+            }
+        }
+        PlasmaComponents3.Label {
+            text: i18nc("keyboard light in percent", "%1%", Math.round(brightness.value))
+            horizontalAlignment: Text.AlignRight
+            Layout.minimumWidth: Kirigami.Units.gridUnit * 2
         }
     }
 }
