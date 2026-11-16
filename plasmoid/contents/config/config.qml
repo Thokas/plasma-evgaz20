@@ -1,36 +1,11 @@
 import QtQuick
 import org.kde.plasma.configuration
 
+// The widget's own settings; the keyboard's are z20's settings app (z20-settings).
 ConfigModel {
-    // First: the settings open on it, and it opens the page an edit button in the popup asked for (configPage).
     ConfigCategory {
-        name: i18n("Lighting presets")
-        icon: "preferences-desktop-color"
-        source: "ConfigPresets.qml"
-    }
-    ConfigCategory {
-        name: i18n("Profiles")
+        name: i18n("Popup")
         icon: "view-list-details"
-        source: "ConfigProfiles.qml"
-    }
-    ConfigCategory {
-        name: i18n("Programs")
-        icon: "applications-games"
-        source: "ConfigApps.qml"
-    }
-    ConfigCategory {
-        name: i18n("Macros")
-        icon: "media-record"
-        source: "ConfigMacros.qml"
-    }
-    ConfigCategory {
-        name: i18n("Presence")
-        icon: "user-away"
-        source: "ConfigPresence.qml"
-    }
-    ConfigCategory {
-        name: i18n("Keyboard")
-        icon: "input-keyboard"
-        source: "ConfigKeyboard.qml"
+        source: "ConfigPopup.qml"
     }
 }

@@ -24,8 +24,7 @@ ColumnLayout {
     // The lighting the service shows while you are away: the preset's name, else the effect.
     readonly property string awayLight: {
         const light = settings ? settings.away_light || "" : "";
-        const preset = light ? Presets.parse(Plasmoid.configuration.presets).find(p => Presets.awayLight(p) === light)
-            : null;
+        const preset = light ? Presets.parse(z20.presetsText).find(p => Presets.awayLight(p) === light) : null;
         return preset ? preset.name : light.split(" ")[1] || "";
     }
     readonly property bool measured: !!sensor && sensor.on && sensor.distance_mm !== undefined
@@ -73,13 +72,10 @@ ColumnLayout {
         }
         PlasmaComponents3.ToolButton {
             icon.name: "document-edit"
-            onClicked: {
-                Plasmoid.configuration.configPage = "ConfigPresence.qml";  // the settings open there
-                Plasmoid.internalAction("configure").trigger();
-            }
+            onClicked: section.z20.openApp("presence")
 
             PlasmaComponents3.ToolTip {
-                text: i18n("What happens when you leave: lock, lighting, … (settings, \"Presence\")")
+                text: i18n("What happens when you leave: lock, lighting, … (z20's settings app, \"Presence\")")
             }
         }
     }

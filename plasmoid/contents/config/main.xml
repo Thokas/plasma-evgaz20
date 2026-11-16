@@ -4,7 +4,8 @@
       xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
   <kcfgfile name=""/>
   <group name="General">
-    <!-- The lighting presets, a JSON list (see ui/lib/presets.js); empty: the defaults. -->
+    <!-- Before 2026-11-16 the lighting presets were kept here (a JSON list, see ui/lib/presets.js); now
+         z20's settings app keeps them in ~/.config/z20/presets.json, and the widget moves these there once. -->
     <entry name="presets" type="String">
       <default></default>
     </entry>
@@ -14,11 +15,6 @@
     </entry>
     <!-- The name of the preset last applied from the popup, to mark it there. -->
     <entry name="lastPreset" type="String">
-      <default></default>
-    </entry>
-    <!-- The settings page an edit button in the popup asks for (its file, as ConfigMacros.qml): the
-         first page opens it and empties this. -->
-    <entry name="configPage" type="String">
       <default></default>
     </entry>
   </group>

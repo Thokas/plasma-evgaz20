@@ -9,7 +9,14 @@ to try a change. Everything below runs without a display
 distro's PyQt6 (system Qt 6) loads Kirigami, kcmutils and Plasma's QML
 modules.
 
-**Here:** One widget: `plasmoid/` (de.thokas.evgaz20). It runs z20 as
+**Here:** One widget: `plasmoid/` (de.thokas.evgaz20), the popup and one
+settings page. The editors (lighting presets, macros, profiles, programs,
+presence, keyboard) are z20's settings app, in `~/Projects/evga-z20/app`,
+and so is the QML both share: `Z20Data.qml`, `presets.js`, `macros.js`
+(evga-z20's `app/qml/lib`), which `install.sh` copies into the package's
+`contents/ui/lib/`. A test copy is put together the same way: `plasmoid/`,
+then those three files into `contents/ui/lib/` (from the checkout, or from
+`~/.local/share/z20/app/qml/lib` as installed). It runs z20 as
 `"$HOME/.local/bin/z20"`, so a scratch `HOME` with a fake `z20` script there
 stands in for the keyboard. Where the real thing is wanted (`leds`,
 `presence ...`), the fake can `exec python3 -I ~/Projects/evga-z20/z20 "$@"`

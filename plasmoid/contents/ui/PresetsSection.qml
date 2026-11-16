@@ -3,7 +3,7 @@
  * click applies one: the keyboard's own effects are stored in the active
  * profile, software ones are saved as what z20's animate service runs. The
  * one applied last is marked while its effect still runs. Presets are
- * built in the settings ("Lighting presets").
+ * built in z20's settings app ("Lighting"), the pencil.
  *
  * Below them the Z20's own keyboard light (z20 backlight): how bright the
  * lighting is, of how it is set; dimmed with the screens when idle, dark
@@ -23,7 +23,8 @@ ColumnLayout {
     id: section
 
     property var z20
-    readonly property var presets: Presets.parse(Plasmoid.configuration.presets)
+    // As the settings app keeps them (~/.config/z20/presets.json), else its defaults.
+    readonly property var presets: Presets.parse(z20 ? z20.presetsText : "")
     // What shows: z20's software effect over the lighting, else the keyboard's own.
     readonly property string effect: !z20 ? "" : z20.animation ? z20.animation.effect
         : z20.lighting ? z20.lighting.effect : ""
@@ -38,10 +39,10 @@ ColumnLayout {
         }
         PlasmaComponents3.ToolButton {
             icon.name: "document-edit"
-            onClicked: Plasmoid.internalAction("configure").trigger()
+            onClicked: section.z20.openApp("lighting")
 
             PlasmaComponents3.ToolTip {
-                text: i18n("Build and change the presets")
+                text: i18n("Build and change the presets (z20's settings app, \"Lighting\")")
             }
         }
     }

@@ -65,19 +65,18 @@ ColumnLayout {
                 PlasmaComponents3.MenuSeparator {}
                 PlasmaComponents3.MenuItem {
                     icon.name: "configure"
-                    text: i18n("Name and Choose Profiles…")
-                    onTriggered: {
-                        Plasmoid.configuration.configPage = "ConfigProfiles.qml";  // the settings open there
-                        Plasmoid.internalAction("configure").trigger();
-                    }
+                    text: i18n("Choose the Profiles Shown Here…")
+                    onTriggered: Plasmoid.internalAction("configure").trigger()
+                }
+                PlasmaComponents3.MenuItem {
+                    icon.name: "edit-rename"
+                    text: i18n("Name the Profiles…")
+                    onTriggered: section.z20.openApp("profiles")
                 }
                 PlasmaComponents3.MenuItem {
                     icon.name: "applications-games"
                     text: i18n("Profiles for Programs…")
-                    onTriggered: {
-                        Plasmoid.configuration.configPage = "ConfigApps.qml";
-                        Plasmoid.internalAction("configure").trigger();
-                    }
+                    onTriggered: section.z20.openApp("programs")
                 }
             }
         }

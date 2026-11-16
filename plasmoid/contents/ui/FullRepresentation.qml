@@ -48,11 +48,11 @@ PlasmaExtras.Representation {
                 // The system tray has its own, next to its menu.
                 visible: !(Plasmoid.containmentDisplayHints & PlasmaCore.Types.ContainmentDrawsPlasmoidHeading)
                 icon.name: "configure"
-                onClicked: Plasmoid.internalAction("configure").trigger()
+                onClicked: full.z20.openApp("")
 
                 PlasmaComponents3.ToolTip {
-                    text: i18n("Settings: lighting presets, profiles, profiles for programs, macros, what happens when you "
-                               + "leave, report rate, n-key rollover, Game Mode keys")
+                    text: i18n("z20's settings app: lighting presets, macros, profile names, profiles for programs, what "
+                               + "happens when you leave, report rate, n-key rollover, Game Mode keys")
                 }
             }
         }
