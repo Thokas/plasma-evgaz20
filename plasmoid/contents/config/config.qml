@@ -14,6 +14,11 @@ ConfigModel {
         source: "ConfigProfiles.qml"
     }
     ConfigCategory {
+        name: i18n("Programs")
+        icon: "applications-games"
+        source: "ConfigApps.qml"
+    }
+    ConfigCategory {
         name: i18n("Macros")
         icon: "media-record"
         source: "ConfigMacros.qml"
