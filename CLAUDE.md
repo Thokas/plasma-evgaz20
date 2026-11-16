@@ -43,7 +43,11 @@ from a short PyQt6 script:
 
 - Env: `QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software
   QT_QUICK_CONTROLS_STYLE=org.kde.desktop` (the default style hides sizing
-  problems).
+  problems). With a scratch `HOME` the colors are Breeze's; for the desktop's
+  own color scheme add `XDG_CONFIG_HOME=$HOME/.config` (the real one, set
+  before HOME changes) and `QT_QPA_PLATFORMTHEME=kde`. Items with
+  `visible: false` get no `Kirigami.Theme` colors (all black), offscreen and
+  in plasmashell alike.
 - i18n: a QObject with stacked `@pyqtSlot` overloads (one per argument count)
   for `i18n`, `i18nc`, `i18np`, `i18nd`, `i18ndc` that fill in %1..., set as
   `engine.rootContext().setContextObject(...)`.
