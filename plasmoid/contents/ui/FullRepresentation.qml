@@ -18,6 +18,10 @@ PlasmaExtras.Representation {
     id: full
 
     property var z20
+    // Whether the popup is open: closing it locks the macro keys again.
+    property bool expanded: true
+
+    onExpandedChanged: if (!expanded) keys.editing = false
 
     Layout.minimumWidth: Kirigami.Units.gridUnit * 20
     Layout.preferredWidth: Kirigami.Units.gridUnit * 24
@@ -93,6 +97,7 @@ PlasmaExtras.Representation {
             }
 
             KeysSection {
+                id: keys
                 visible: !!full.z20.status
                 Layout.fillWidth: true
                 Layout.leftMargin: Kirigami.Units.largeSpacing

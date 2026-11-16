@@ -46,6 +46,7 @@ PlasmoidItem {
 
     fullRepresentation: FullRepresentation {
         z20: z20Data
+        expanded: root.expanded
     }
 
     Plasmoid.contextualActions: [

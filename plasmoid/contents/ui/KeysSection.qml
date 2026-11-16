@@ -1,9 +1,9 @@
 /*
  * The macro keys E1-E5 of the active profile, and every other key (or Fn
  * layer) that runs a macro: which macro each runs and how, changed right
- * here (MacroKeyRow). "Another Key" puts a macro on any key. Below, how
- * many other keys differ from the factory setting. Macros are written in
- * the settings ("Macros"), the pencil.
+ * here (MacroKeyRow) once the lock is open. "Another Key" puts a macro on
+ * any key. Below, how many other keys differ from the factory setting.
+ * Macros are written in the settings ("Macros"), the pencil.
  */
 
 import QtQuick
@@ -34,6 +34,11 @@ ColumnLayout {
     readonly property var macroNames: JSON.parse(macroNamesText)
     readonly property var macroNumbers: Object.keys(macroNames).map(Number).sort((a, b) => a - b)
     property bool adding: false
+    // The lock: closed, the rows only say what each key runs, so scrolling the popup with the wheel over one
+    // can't change it.
+    property bool editing: false
+
+    onEditingChanged: adding = false
 
     // The longest key name, for the width of the names' column.
     TextMetrics {
@@ -51,6 +56,17 @@ ColumnLayout {
             level: 4
             text: i18n("Macro keys")
             Layout.fillWidth: true
+        }
+        PlasmaComponents3.ToolButton {
+            checkable: true
+            checked: section.editing
+            icon.name: checked ? "object-unlocked" : "object-locked"
+            onToggled: section.editing = checked
+
+            PlasmaComponents3.ToolTip {
+                text: section.editing ? i18n("Lock: show what the keys run, without changing it")
+                                      : i18n("Unlock: change which macro each key runs, and how")
+            }
         }
         PlasmaComponents3.ToolButton {
             icon.name: "document-edit"
@@ -71,13 +87,14 @@ ColumnLayout {
         MacroKeyRow {
             z20: section.z20
             label: modelData
+            editing: section.editing
             labelWidth: Math.max(Kirigami.Units.gridUnit * 2, Math.ceil(labelMetrics.advanceWidth))
             Layout.fillWidth: true
         }
     }
 
     PlasmaComponents3.ToolButton {
-        visible: !section.adding
+        visible: section.editing && !section.adding
         enabled: section.macroNumbers.length > 0
         icon.name: "list-add"
         text: i18n("Another Key")

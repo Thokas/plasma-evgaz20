@@ -2,7 +2,8 @@
  * One key in the popup's "Macro keys": which macro it runs (nothing, or
  * what it does now where that's something else) and how: once, a number
  * of times, until pressed again (toggle) or while held. A change goes to
- * the keyboard at once (z20 key, in the active profile).
+ * the keyboard at once (z20 key, in the active profile). Until editing is
+ * on (KeysSection's lock), the row only says it, as text.
  */
 
 import QtQuick
@@ -20,6 +21,8 @@ RowLayout {
     property string label
     // The same for all rows, so their lists line up.
     property real labelWidth: Kirigami.Units.gridUnit * 3
+    // Off: no lists, only text, so the wheel scrolling the popup can't change what the key runs.
+    property bool editing: true
 
     readonly property bool fn: label.startsWith("Fn+")
     readonly property string key: label.replace(/^Fn\+/, "").toLowerCase()
@@ -70,7 +73,26 @@ RowLayout {
         elide: Text.ElideRight
         Layout.preferredWidth: row.labelWidth
     }
+    // What the key runs and how, while editing is off.
+    PlasmaComponents3.Label {
+        visible: !row.editing
+        text: row.chosen >= 0 ? row.choices[row.chosen].text : row.now ? row.now.text : ""
+        elide: Text.ElideRight
+        // Where the list's text is, and as high, so turning editing on moves nothing.
+        verticalAlignment: Text.AlignVCenter
+        leftPadding: choice.leftPadding
+        Layout.fillWidth: true
+        Layout.minimumHeight: Math.max(choice.implicitHeight, row.modeNow === "times" ? times.implicitHeight : 0)
+    }
+    PlasmaComponents3.Label {
+        visible: !row.editing && row.runsMacro
+        text: row.modeNow === "times" ? i18n("%1 times", row.timesNow)
+            : row.runIndex >= 0 ? row.runModes[row.runIndex].text : row.isMacro ? row.now.run : ""
+        opacity: 0.7
+    }
     PlasmaComponents3.ComboBox {
+        id: choice
+        visible: row.editing
         model: row.choices.map(c => c.text)
         currentIndex: row.chosen
         displayText: currentIndex < 0 && row.now ? row.now.text : currentText
@@ -94,7 +116,7 @@ RowLayout {
         }
     }
     PlasmaComponents3.ComboBox {
-        visible: row.runsMacro
+        visible: row.editing && row.runsMacro
         model: row.runModes.map(m => m.text)
         currentIndex: row.runIndex
         // One of Unleash's own run modes shows by its name.
@@ -112,7 +134,7 @@ RowLayout {
     }
     PlasmaComponents3.SpinBox {
         id: times
-        visible: row.runsMacro && row.modeNow === "times"
+        visible: row.editing && row.runsMacro && row.modeNow === "times"
         from: 2
         to: 255
         editable: true
