@@ -91,7 +91,10 @@ class Widget(unittest.TestCase):
         shutil.copy(os.path.join(HERE, "widget", "fake_z20_settings"), os.path.join(home, ".local", "bin", "z20-settings"))
         with open(os.path.join(home, "status.json"), "w") as f:
             json.dump(STATUS, f)
-        env = {k: v for k, v in os.environ.items() if not k.startswith(("QT_", "XDG_"))}
+        # Nothing of the session: no display, no session bus (D-Bus would start the desktop's services for
+        # this home), no XDG dirs.
+        env = {k: v for k, v in os.environ.items() if not k.startswith(("QT_", "XDG_", "DBUS_"))
+               and k not in ("DISPLAY", "WAYLAND_DISPLAY")}
         env.update(HOME=home, XDG_RUNTIME_DIR=runtime, XDG_CONFIG_HOME=os.path.join(home, ".config"),
                    QT_QPA_PLATFORM="offscreen", QT_QUICK_BACKEND="software",
                    QT_QUICK_CONTROLS_STYLE="org.kde.desktop")
@@ -131,13 +134,26 @@ class Widget(unittest.TestCase):
         self.assertEqual(r["shown_after"], "1,2,3,4")
         self.assertEqual(r["settings"], ["[]"])  # the app on its first page
 
-    @unittest.skipUnless(shutil.which("plasmawindowed"), "plasmawindowed (plasma-workspace) isn't installed")
+    @unittest.skipUnless(shutil.which("plasmawindowed") and shutil.which("dbus-daemon"),
+                         "plasmawindowed (plasma-workspace) or dbus-daemon isn't installed")
     def test_the_whole_widget_loads_in_plasmawindowed(self):
         home, env = self.home()
         data = os.path.join(home, "data", "plasma", "plasmoids")
         os.makedirs(data)
         shutil.copytree(self.package, os.path.join(data, "de.thokas.evgaz20"))
         env["XDG_DATA_HOME"] = os.path.join(home, "data")
+        # A D-Bus of its own, which starts no services (plasmawindowed needs one): not the session's, where an
+        # open plasmawindowed would take the widget over, and D-Bus would start services for this home.
+        with open(os.path.join(home, "bus.conf"), "w") as f:
+            f.write(f"<busconfig><type>session</type><listen>unix:dir={home}</listen><policy context='default'>"
+                    "<allow send_destination='*' eavesdrop='true'/><allow eavesdrop='true'/><allow own='*'/>"
+                    "</policy></busconfig>")
+        bus = subprocess.Popen(["dbus-daemon", "--config-file", os.path.join(home, "bus.conf"), "--nofork",
+                                "--print-address"], env=env, stdout=subprocess.PIPE, text=True)
+        self.addCleanup(bus.stdout.close)
+        self.addCleanup(bus.wait)
+        self.addCleanup(bus.terminate)
+        env["DBUS_SESSION_BUS_ADDRESS"] = bus.stdout.readline().strip()
         try:
             done = subprocess.run(["plasmawindowed", "de.thokas.evgaz20"], env=env, capture_output=True, text=True,
                                   timeout=10)
