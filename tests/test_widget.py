@@ -97,7 +97,8 @@ class Widget(unittest.TestCase):
                and k not in ("DISPLAY", "WAYLAND_DISPLAY")}
         env.update(HOME=home, XDG_RUNTIME_DIR=runtime, XDG_CONFIG_HOME=os.path.join(home, ".config"),
                    QT_QPA_PLATFORM="offscreen", QT_QUICK_BACKEND="software",
-                   QT_QUICK_CONTROLS_STYLE="org.kde.desktop")
+                   QT_QUICK_CONTROLS_STYLE="org.kde.desktop",
+                   QT_FORCE_STDERR_LOGGING="1")  # errors on stderr, never to the journal (JOURNAL_STREAM)
         return home, env
 
     def drive(self, scenario):
