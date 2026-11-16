@@ -457,8 +457,13 @@ QtObject {
             z20._done += 1;
             z20._next();
             if (data["exit code"] !== 0) {
-                const message = (data.stderr || "").trim().split("\n").pop().replace(/^z20: /, "");
-                z20.commandError = message || i18n("Command failed: %1", source.replace(/ #\d+$/, ""));
+                const command = source.replace(/ #\d+$/, "");
+                const stderr = (data.stderr || "").trim();
+                // Also in the journal (one line), as commandError shows only for a few seconds.
+                console.warn("z20 command failed (exit code " + data["exit code"] + "): " + command
+                             + (stderr ? ": " + stderr.replace(/\s*\n\s*/g, " | ") : ""));
+                const message = stderr.split("\n").pop().replace(/^z20: /, "");
+                z20.commandError = message || i18n("Command failed: %1", command);
                 errorTimeout.restart();
             } else {
                 z20.commandError = "";  // what went wrong before went right now, or doesn't matter any more
