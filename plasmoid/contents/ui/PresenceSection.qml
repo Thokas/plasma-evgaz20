@@ -73,7 +73,10 @@ ColumnLayout {
         }
         PlasmaComponents3.ToolButton {
             icon.name: "document-edit"
-            onClicked: Plasmoid.internalAction("configure").trigger()
+            onClicked: {
+                Plasmoid.configuration.configPage = "ConfigPresence.qml";  // the settings open there
+                Plasmoid.internalAction("configure").trigger();
+            }
 
             PlasmaComponents3.ToolTip {
                 text: i18n("What happens when you leave: lock, lighting, … (settings, \"Presence\")")

@@ -12,6 +12,7 @@ import QtQuick.Controls as QQC2
 import QtQuick.Dialogs
 import org.kde.kirigami as Kirigami
 import org.kde.kcmutils as KCM
+import org.kde.plasma.plasmoid
 
 import "lib" as Lib
 import "lib/presets.js" as Presets
@@ -26,7 +27,42 @@ KCM.SimpleKCM {
     readonly property var preset: presets[current] || null
     readonly property int slots: preset ? Presets.COLOR_SLOTS[preset.effect] || 0 : 0
 
-    Component.onCompleted: presets = Presets.parse(cfg_presets)
+    Component.onCompleted: {
+        presets = Presets.parse(cfg_presets);
+        if (Plasmoid.configuration.configPage) {
+            Qt.callLater(openAskedPage);  // once the dialog has this page in place
+        }
+    }
+
+    // The settings always open on their first page, this one. An edit button in the popup asks for its own
+    // (configPage, as ConfigMacros.qml): this opens it, as clicking its entry in the dialog's list does.
+    function openAskedPage() {
+        const file = Plasmoid.configuration.configPage;
+        Plasmoid.configuration.configPage = "";
+        let dialog = page.parent;  // up to Plasma's AppletConfiguration.qml
+        while (dialog && dialog.globalConfigModel === undefined) {
+            dialog = dialog.parent;
+        }
+        const entry = dialog ? listEntry(dialog, "/" + file) : null;
+        if (entry) {
+            entry.activated();
+        }
+    }
+
+    // The dialog's list entry (ConfigCategoryDelegate) of the page whose file ends so, below item.
+    function listEntry(item, end) {
+        for (let i = 0; i < item.children.length; i++) {
+            const child = item.children[i];
+            if (child.item && typeof child.activated === "function" && String(child.item.source).endsWith(end)) {
+                return child;
+            }
+            const found = listEntry(child, end);
+            if (found) {
+                return found;
+            }
+        }
+        return null;
+    }
 
     // Every change goes through here: a new list, so the bindings see it, and into the config.
     function update(list) {

@@ -16,5 +16,10 @@
     <entry name="lastPreset" type="String">
       <default></default>
     </entry>
+    <!-- The settings page an edit button in the popup asks for (its file, as ConfigMacros.qml): the
+         first page opens it and empties this. -->
+    <entry name="configPage" type="String">
+      <default></default>
+    </entry>
   </group>
 </kcfg>

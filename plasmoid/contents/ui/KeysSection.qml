@@ -54,7 +54,10 @@ ColumnLayout {
         }
         PlasmaComponents3.ToolButton {
             icon.name: "document-edit"
-            onClicked: Plasmoid.internalAction("configure").trigger()
+            onClicked: {
+                Plasmoid.configuration.configPage = "ConfigMacros.qml";  // the settings open there
+                Plasmoid.internalAction("configure").trigger();
+            }
 
             PlasmaComponents3.ToolTip {
                 text: i18n("Write and change macros (settings, \"Macros\")")

@@ -2,6 +2,7 @@ import QtQuick
 import org.kde.plasma.configuration
 
 ConfigModel {
+    // First: the settings open on it, and it opens the page an edit button in the popup asked for (configPage).
     ConfigCategory {
         name: i18n("Lighting presets")
         icon: "preferences-desktop-color"

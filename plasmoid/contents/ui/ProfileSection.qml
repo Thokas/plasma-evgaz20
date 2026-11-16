@@ -64,7 +64,10 @@ ColumnLayout {
                 PlasmaComponents3.MenuItem {
                     icon.name: "configure"
                     text: i18n("Name and Choose Profiles…")
-                    onTriggered: Plasmoid.internalAction("configure").trigger()
+                    onTriggered: {
+                        Plasmoid.configuration.configPage = "ConfigProfiles.qml";  // the settings open there
+                        Plasmoid.internalAction("configure").trigger();
+                    }
                 }
             }
         }
