@@ -13,7 +13,6 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
-import QtQuick.Dialogs
 import org.kde.kirigami as Kirigami
 import org.kde.kcmutils as KCM
 import org.kde.plasma.plasmoid
@@ -153,13 +152,15 @@ KCM.SimpleKCM {
         onTriggered: if (page.preset) z20.applyPreset(page.preset, true)
     }
 
-    ColorDialog {
-        id: colorDialog
+    // Colors for the effect and for the keys selected: the desktop's, the preset's, or any other.
+    ColorPicker {
+        id: picker
 
         property int slot: 0  // which of the effect's colors; -1: the selected keys'
 
-        onAccepted: {
-            const color = selectedColor.toString().slice(1, 7);
+        used: page.preset ? (page.preset.colors || []).concat(Object.values(page.preset.keys || {}))
+            .filter((c, i, all) => all.indexOf(c) === i) : []
+        onPicked: color => {
             if (slot < 0) {
                 page.setKeys(keyboard.selected, color);
             } else {
@@ -346,15 +347,13 @@ KCM.SimpleKCM {
                     Layout.fillWidth: !keyboard.selected.length
                 }
                 QQC2.Button {
+                    id: keysColor
                     visible: keyboard.selected.length > 0
                     icon.name: "color-picker"
                     text: i18n("Color…")
                     onClicked: {
-                        const keys = page.preset.keys || {};
-                        const first = keys[keyboard.selected[0]];
-                        colorDialog.slot = -1;
-                        colorDialog.selectedColor = "#" + (first && first !== "000000" ? first : "ffffff");
-                        colorDialog.open();
+                        picker.slot = -1;
+                        picker.openAt(keysColor, (page.preset.keys || {})[keyboard.selected[0]]);
                     }
                 }
                 QQC2.Button {
@@ -493,20 +492,20 @@ KCM.SimpleKCM {
                                     colors.splice(index, 1);
                                     page.change("colors", colors);
                                 } else {
-                                    colorDialog.slot = index;
-                                    colorDialog.selectedColor = "#" + modelData;
-                                    colorDialog.open();
+                                    picker.slot = index;
+                                    picker.openAt(parent, modelData);
                                 }
                             }
                         }
                     }
                 }
                 QQC2.ToolButton {
+                    id: addColor
                     icon.name: "list-add"
                     visible: !!page.preset && (page.preset.colors || []).length < page.slots
                     onClicked: {
-                        colorDialog.slot = (page.preset.colors || []).length;
-                        colorDialog.open();
+                        picker.slot = (page.preset.colors || []).length;
+                        picker.openAt(addColor, "");
                     }
                     QQC2.ToolTip.text: i18n("Add a color")
                     QQC2.ToolTip.visible: hovered

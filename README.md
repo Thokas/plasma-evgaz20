@@ -46,7 +46,10 @@ panel or the system tray.
     and direction; and keys with a color of their own over the effect:
     click keys or drag over them (Ctrl: to unselect), or pick groups
     (WASD, arrows, letters, numpad, E1–E5, light bars, logo, …), then
-    Color…, Dark, or The Effect to give them back to it. "Own colors"
+    Color…, Dark, or The Effect to give them back to it. Colors come from
+    a picker that always has the desktop's own (its color scheme's accent
+    and the colors it marks things with, as the scheme has them now), the
+    preset's colors, and any other through the color dialog. "Own colors"
     lists the colors keys have; a click selects their keys. "Try on the
     keyboard" shows a preset without storing it, or "Show every change
     there as it's made" does with each change; "Back to stored" undoes
