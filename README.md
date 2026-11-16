@@ -111,6 +111,10 @@ lets it clone evga-z20 there), GitHub on every pull request
 ./uninstall.sh
 ```
 
+## Changes
+
+What changed in each release: [CHANGELOG.md](CHANGELOG.md).
+
 ## Contributing
 
 Issues and pull requests are welcome on GitHub. GitHub Actions runs the
