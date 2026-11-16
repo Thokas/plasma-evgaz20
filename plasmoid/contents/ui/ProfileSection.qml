@@ -24,10 +24,8 @@ ColumnLayout {
         return list.sort((a, b) => a - b);
     }
 
-    // "Work" or, for a name as from the factory ("DEFAULT 3"), "Profile 3".
     function label(n) {
-        const name = z20.profileName(n);
-        return !name || /^default \d$/i.test(name.trim()) ? i18n("Profile %1", n) : name;
+        return z20.profileLabel(n);
     }
 
     RowLayout {

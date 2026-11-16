@@ -38,7 +38,7 @@ KCM.SimpleKCM {
                 readonly property int number: index + 1
 
                 Kirigami.FormData.label: index === 0 ? i18n("Profiles shown:") : ""
-                text: z20.profileName(number)
+                text: z20.profileLabel(number)
                 checked: page.shown.indexOf(number) >= 0
                 onToggled: page.setShown(number, checked)
             }
