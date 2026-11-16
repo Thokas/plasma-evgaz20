@@ -4,6 +4,7 @@ the package's QML gave. For tests/test_widget.py, which puts the package togethe
 home of its own: python3 -I drive.py SCENARIO PACKAGE."""
 import json
 import os
+import shutil
 import sys
 import tempfile
 
@@ -228,7 +229,8 @@ def main():
     scenario, PACKAGE = sys.argv[1], sys.argv[2]
     ui = os.path.join(PACKAGE, "contents", "ui")
     part, steps = SCENARIOS[scenario]
-    root = os.path.join(tempfile.mkdtemp(prefix="z20widget"), "Test.qml")
+    folder = tempfile.mkdtemp(prefix="z20widget")  # for the window's QML, gone again at the end
+    root = os.path.join(folder, "Test.qml")
     with open(root, "w") as f:
         f.write(POPUP % {"ui": ui, "part": part} if part else DIALOG % {"ui": ui, "shell": SHELL})
     qInstallMessageHandler(heard)
@@ -241,9 +243,13 @@ def main():
     if not engine.rootObjects():
         note(error="the QML didn't load")
         print("RESULT " + json.dumps(result), flush=True)
+        shutil.rmtree(folder, ignore_errors=True)
         return 1
     run(steps())
-    return app.exec()
+    try:
+        return app.exec()
+    finally:
+        shutil.rmtree(folder, ignore_errors=True)
 
 
 if __name__ == "__main__":
