@@ -13,9 +13,5 @@
     <entry name="shownProfiles" type="String">
       <default>1,2,3</default>
     </entry>
-    <!-- The name of the preset last applied from the popup, to mark it there. -->
-    <entry name="lastPreset" type="String">
-      <default></default>
-    </entry>
   </group>
 </kcfg>

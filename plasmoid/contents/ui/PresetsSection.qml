@@ -2,8 +2,8 @@
  * The lighting presets as buttons, each with a strip of its colors. A
  * click applies one: the keyboard's own effects are stored in the active
  * profile, software ones are saved as what z20's animate service runs. The
- * one applied last is marked while its effect still runs. Presets are
- * built in z20's settings app ("Lighting"), the pencil.
+ * one applied last, here or in z20's settings app, is marked while its
+ * effect still runs. Presets are built in that app ("Lighting"), the pencil.
  *
  * Below them the Z20's own keyboard light (z20 backlight): how bright the
  * lighting is, of how it is set; dimmed with the screens when idle, dark
@@ -25,9 +25,6 @@ ColumnLayout {
     property var z20
     // As the settings app keeps them (~/.config/z20/presets.json), else its defaults.
     readonly property var presets: Presets.parse(z20 ? z20.presetsText : "")
-    // What shows: z20's software effect over the lighting, else the keyboard's own.
-    readonly property string effect: !z20 ? "" : z20.animation ? z20.animation.effect
-        : z20.lighting ? z20.lighting.effect : ""
 
     RowLayout {
         Layout.fillWidth: true
@@ -58,13 +55,11 @@ ColumnLayout {
 
             PlasmaComponents3.Button {
                 text: modelData.name
-                checked: Plasmoid.configuration.lastPreset === modelData.name && section.effect === modelData.effect
+                // The one applied last, here or in the app, while its effect shows.
+                checked: section.z20.isApplied(modelData)
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1  // equal columns
-                onClicked: {
-                    section.z20.applyPreset(modelData, false);
-                    Plasmoid.configuration.lastPreset = modelData.name;
-                }
+                onClicked: section.z20.applyPreset(modelData, false)
 
                 // The preset's colors along the bottom edge.
                 Row {
