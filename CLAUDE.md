@@ -42,12 +42,19 @@ scratch data dir:
 ```sh
 d=$(mktemp -d); mkdir -p "$d/plasma/plasmoids"
 cp -r PACKAGE_DIR "$d/plasma/plasmoids/PLUGIN_ID"
-XDG_DATA_HOME="$d" QT_QPA_PLATFORM=offscreen timeout 10 plasmawindowed PLUGIN_ID
+XDG_DATA_HOME="$d" QT_QPA_PLATFORM=offscreen QT_FORCE_STDERR_LOGGING=1 \
+  timeout 10 plasmawindowed PLUGIN_ID
 ```
 
 It runs until the timeout (exit 124). Nothing printed but `qml: 0` (that's
 plasmawindowed's own) means no QML errors; a planted error does show up, so
 the silence counts.
+`QT_FORCE_STDERR_LOGGING=1` keeps Qt's messages on stderr: where stderr is
+the journal (`JOURNAL_STREAM`), Qt logs there and the silence means nothing.
+Give it a D-Bus of its own that starts no services (a `dbus-daemon` config
+without `<servicedir>`, as `tests/` does), not the session's: there an open
+plasmawindowed takes the widget over, and D-Bus starts the desktop's services
+(portals, kglobalaccel, ...) for the scratch HOME, which outlive the test.
 
 ### A page or a popup part: PyQt6
 
@@ -71,7 +78,11 @@ from a short PyQt6 script:
   `module org.kde.plasma.plasmoid` and `singleton Plasmoid 1.0 Plasmoid.qml`;
   `Plasmoid.qml` a `pragma Singleton` QtObject with what the code uses, as
   `property var configuration: ({ someKey: "", keys() { return
-  Object.keys(this).filter(k => k !== "keys"); } })`.
+  Object.keys(this).filter(k => k !== "keys"); } })`. A package that
+  imports `org.kde.plasma.plasmoid 2.0` needs `singleton Plasmoid 2.0
+  Plasmoid.qml` in the stand-in's qmldir and a 2.0 import in the harness too:
+  after an unversioned import of it, a later 2.0 import in the same run gets
+  Plasma's own module, `Plasmoid.configuration` undefined in every file.
 - Commands the widget runs (Plasma5Support executable DataSource, helpers):
   point them at fakes, with a scratch `HOME` where they're started as
   `$HOME/...`, or a `PATH` with fake scripts first. Fakes that log their
@@ -83,6 +94,10 @@ from a short PyQt6 script:
 - Screenshots: `sip.cast(engine.rootObjects()[0], QQuickWindow).grabWindow()
   .save("x.png")`, then look at them. Input: `QMouseEvent`, `QWheelEvent`,
   `QKeyEvent` sent to the window, at `item.mapToScene(...)`.
+- Before/after: `git archive HEAD PACKAGE_DIR | tar -x -C <scratch>` puts
+  the committed version beside the working tree; run the same harness on both
+  and compare the screenshots (it also shows which warnings were there before
+  the change).
 - Run steps one after the other (each schedules the next with
   `QTimer.singleShot`), never all at fixed offsets: coarse timers (about 5 %)
   swap steps 100 ms apart a few seconds in.
