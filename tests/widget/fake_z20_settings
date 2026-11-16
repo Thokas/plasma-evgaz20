@@ -1,0 +1,3 @@
+#!/bin/sh
+# A stand-in for z20's settings app: the page it was asked for, logged ($HOME/settings.log).
+echo "[$*]" >> "$HOME/settings.log"

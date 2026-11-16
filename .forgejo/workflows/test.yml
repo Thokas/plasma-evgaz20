@@ -1,0 +1,64 @@
+# The tests, on every push and pull request. "unit": install.sh against a fake kpackagetool6
+# (tests/test_install.py); the widget's own tests skip there, without PyQt6. "widget": the popup's
+# parts and the settings page offscreen, with KDE's QML modules as Ubuntu has them and Plasma's own
+# settings dialog (plasma-desktop-data), against a fake z20 (tests/test_widget.py, tests/widget).
+# z20's shared QML comes from a clone of evga-z20, which is private: the repository secret
+# EVGA_Z20_TOKEN is a token that may read it (else this repository's own token is tried, which can't).
+# WIDGET_TESTS=required makes anything missing an error rather than a skip. plasmawindowed
+# (plasma-workspace) is left out, too big for every push: tests/ runs it where it is installed.
+name: tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unit:
+    runs-on: docker
+    container:
+      image: ubuntu:26.04
+    steps:
+      - name: checkout
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+            git ca-certificates python3 >/dev/null
+          # The token goes in a header for the clone only (GIT_CONFIG_*), not into src/.git/config.
+          auth=$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)
+          GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.extraHeader GIT_CONFIG_VALUE_0="Authorization: Basic $auth" \
+            git clone -q "${{ github.server_url }}/${{ github.repository }}.git" src
+          git -C src checkout -q "${{ github.sha }}"
+      - name: install.sh
+        run: cd src && python3 -I -m unittest discover -s tests -v
+
+  widget:
+    runs-on: docker
+    container:
+      image: ubuntu:26.04
+    steps:
+      - name: checkout, and z20's shared QML
+        env:
+          TOKEN: ${{ github.token }}
+          Z20_TOKEN: ${{ secrets.EVGA_Z20_TOKEN || github.token }}
+        run: |
+          apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+            git ca-certificates python3 fonts-dejavu-core \
+            python3-pyqt6 python3-pyqt6.qtqml python3-pyqt6.qtquick \
+            qml6-module-org-kde-kirigami qml6-module-org-kde-kcmutils qml6-module-org-kde-plasma-plasma5support \
+            qml6-module-org-kde-desktop qml6-module-org-kde-kitemmodels qml6-module-org-kde-kquickcontrols \
+            qml6-module-qtquick-dialogs qml6-module-qtquick-controls qml6-module-qtquick-layouts \
+            qml6-module-qtquick-templates qml6-module-qtquick-window qml6-module-qtqml-workerscript \
+            plasma-desktoptheme plasma-desktop-data >/dev/null
+          auth=$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)
+          GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.extraHeader GIT_CONFIG_VALUE_0="Authorization: Basic $auth" \
+            git clone -q "${{ github.server_url }}/${{ github.repository }}.git" src
+          git -C src checkout -q "${{ github.sha }}"
+          auth=$(printf 'x-access-token:%s' "$Z20_TOKEN" | base64 -w0)
+          GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.extraHeader GIT_CONFIG_VALUE_0="Authorization: Basic $auth" \
+            git clone -q --depth 1 "${{ github.server_url }}/${{ github.repository_owner }}/evga-z20.git" evga-z20 \
+            || { echo "Can't clone evga-z20: set the repository secret EVGA_Z20_TOKEN (read access)." >&2; exit 1; }
+      - name: the popup and the settings page, offscreen
+        env:
+          WIDGET_TESTS: required
+        run: Z20_REPO="$PWD/evga-z20" && export Z20_REPO && cd src && python3 -I -m unittest discover -s tests -v

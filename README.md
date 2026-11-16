@@ -84,6 +84,26 @@ System Tray, Entries, "EVGA Z20": Always shown), or add it to a panel or
 the desktop via Add Widgets. After an update, restart the shell:
 `systemctl --user restart plasma-plasmashell.service`.
 
+## Tests
+
+```
+python3 -I -m unittest discover -s tests -v
+```
+
+`tests/test_install.py` runs `install.sh` against a fake `kpackagetool6`:
+it stops without z20's settings app, and puts the package together with
+z20's shared QML. `tests/test_widget.py` puts the package together the
+same way (z20's shared QML from `$Z20_REPO`, a checkout of evga-z20, else
+`~/Projects/evga-z20` or z20 as installed) and runs, offscreen with z20's
+real `Z20Data` against a fake `z20`: the presets (the stored lighting
+marked, a click applying one), the profile menu (opening the app on its
+page, or the widget's settings), the settings page in Plasma's own
+settings dialog, and the whole widget in `plasmawindowed` where that is
+installed; any warning from the widget's QML fails. They need PyQt6 and
+KDE's QML modules, else they are skipped. Forgejo runs them on every push
+(`.forgejo/workflows/test.yml`; the repository secret `EVGA_Z20_TOKEN`
+lets it clone evga-z20).
+
 ## Uninstall
 
 ```
