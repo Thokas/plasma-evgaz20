@@ -1,7 +1,9 @@
 /*
  * The profiles to pick from, with their names (which and how they are
  * called is set in the settings, "Profiles"; the active one always shows),
- * all nine behind the menu button, and Game Mode with the keys it blocks.
+ * all nine behind the menu button, the program the active one is on for
+ * (z20's apps service, set up in the settings, "Programs"), and Game Mode
+ * with the keys it blocks.
  */
 
 import QtQuick
@@ -69,6 +71,14 @@ ColumnLayout {
                         Plasmoid.internalAction("configure").trigger();
                     }
                 }
+                PlasmaComponents3.MenuItem {
+                    icon.name: "applications-games"
+                    text: i18n("Profiles for Programs…")
+                    onTriggered: {
+                        Plasmoid.configuration.configPage = "ConfigApps.qml";
+                        Plasmoid.internalAction("configure").trigger();
+                    }
+                }
             }
         }
     }
@@ -93,6 +103,32 @@ ColumnLayout {
                     text: i18n("Profile %1 (Fn + %1)", modelData)
                 }
             }
+        }
+    }
+
+    // The active profile is on for a program that runs; another profile picked by hand stays when it ends.
+    RowLayout {
+        id: appLine
+
+        readonly property var rule: section.z20.appRule
+
+        visible: !!rule
+        spacing: Kirigami.Units.smallSpacing
+        Layout.fillWidth: true
+
+        Kirigami.Icon {
+            source: "applications-games"
+            implicitWidth: Kirigami.Units.iconSizes.small
+            implicitHeight: implicitWidth
+        }
+        PlasmaComponents3.Label {
+            text: !appLine.rule ? "" : appLine.rule.before !== appLine.rule.profile
+                ? i18n("For %1 · back to %2 when it ends", appLine.rule.name, section.label(appLine.rule.before))
+                : i18n("For %1", appLine.rule.name)
+            font: Kirigami.Theme.smallFont
+            opacity: 0.7
+            elide: Text.ElideRight
+            Layout.fillWidth: true
         }
     }
 

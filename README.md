@@ -11,7 +11,9 @@ panel or the system tray.
 - **Game Mode on:** Plasma's OSD (the volume keys' popup) says so, also
   over fullscreen games, however it was switched on (its key, the popup, z20).
 - **Popup:**
-  - the profiles you chose, by name (all nine in the menu next to them)
+  - the profiles you chose, by name (all nine in the menu next to them);
+    while z20's apps service has the keyboard on one for a program, which
+    one: "For Cyberpunk 2077 · back to Work when it ends"
   - Game Mode (and the keys it blocks)
   - lighting presets: one click applies one. The keyboard's own effects
     are stored in the active profile; the software ones (aurora, fire,
@@ -53,6 +55,18 @@ panel or the system tray.
     Presets" brings back the ones not in the list.
   - **Profiles:** which profiles the popup shows (the active one always
     does) and their names, stored in the keyboard.
+  - **Programs:** profiles for programs, as Unleash RGB links a profile to
+    a game: while a program of the list runs, z20's apps service has the
+    keyboard on its profile, and when it ends, back on the profile from
+    before (unless you switched since). A switch for the service; the
+    programs in their order (of those that run, the first counts), each
+    with its profile, moved up and down or removed; a new one by name
+    (`Cyberpunk2077.exe`, `AppId=1091500` for a Steam game, `*` and `?` as
+    in the shell) or picked from what runs now, newest first, with a
+    search (a Steam game also by its app ID and name). The program that
+    runs now is marked. Written to `~/.config/z20/apps.ini` with
+    `z20 apps set`; these apply at once. Also from the menu next to the
+    profiles: "Profiles for Programs…".
   - **Macros:** the macros stored in the keyboard, listed by name with a
     search, each with a short line of its steps and the keys that run it;
     write new ones, change their name and steps, delete them. Picking
@@ -102,7 +116,8 @@ widget sits among the tray's hidden entries.
 ## Install
 
 Needs z20 installed (`~/.local/bin/z20`, with its udev rule; from
-2026-11-16 on, with `z20 leds` and `z20 color ... none --live`), see
+2026-11-16 on, with `z20 leds`, `z20 color ... none --live` and `z20 apps`
+for "Programs"), see
 [evga-z20](https://github.com/Thokas/evga-z20).
 
 ```

@@ -51,8 +51,8 @@ PlasmaExtras.Representation {
                 onClicked: Plasmoid.internalAction("configure").trigger()
 
                 PlasmaComponents3.ToolTip {
-                    text: i18n("Settings: lighting presets, profiles, macros, what happens when you leave, report rate, "
-                               + "n-key rollover, Game Mode keys")
+                    text: i18n("Settings: lighting presets, profiles, profiles for programs, macros, what happens when you "
+                               + "leave, report rate, n-key rollover, Game Mode keys")
                 }
             }
         }

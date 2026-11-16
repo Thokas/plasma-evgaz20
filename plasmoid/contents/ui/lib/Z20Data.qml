@@ -113,6 +113,9 @@ QtObject {
         }
         const lines = [i18n("Profile %1: %2", status.profile, status.profile_name),
                        i18n("Lighting: %1", animation ? animation.effect : lighting.effect)];
+        if (appRule) {
+            lines.splice(1, 0, i18n("For %1", appRule.name));
+        }
         if (status.game_mode) {
             lines.push(i18n("Game Mode on"));
         }
@@ -201,6 +204,39 @@ QtObject {
     // What the keyboard itself does when you leave (nothing, dark, lock, sleep), after seconds; active profile.
     function setSensorLeave(action, seconds) { run(["sensor", "leave", action, seconds]); }
 
+    // --- profiles for programs (z20 apps, z20 from 2026-11-16 on) ---------
+
+    // z20 apps --json ({config, exists, rules: [{program, profile}], service, active}); null until refreshApps()
+    // read it. Each apps action brings it back as it is then.
+    property var appsSettings: null
+    // z20 apps running --json: what runs now that a rule could name ([{program, name, cmdline, pid}], newest
+    // first); null until refreshRunning() read it.
+    property var running: null
+    property string appsError: ""
+    // The rule the z20-apps service has the active profile on for ({program, name, profile, before}), or null.
+    readonly property var appRule: status && status.apps && status.apps.profile === profile ? status.apps : null
+
+    // All the rules, in their order: [program, profile, program, profile, ...].
+    function setApps(rules) { run(["apps", "--json", "--", "set"].concat(rules)); }
+    function setAppsService(on) { run(["apps", "--json", on ? "on" : "off"]); }
+    function refreshApps() { _start(_appsCommand); }
+    function refreshRunning() { _start(_runningCommand); }
+
+    readonly property string _appsCommand: _z20 + " apps --json"
+    readonly property string _runningCommand: _z20 + " apps running --json"
+    property int _appsFrom: 0  // _done when the apps read began: an apps action that ended since makes it old
+
+    function _readApps(source, data) {
+        const read = _parse(data.stdout);
+        if (source === _runningCommand) {
+            running = read || running;
+        } else if (_appsFrom === _done) {
+            appsSettings = read || appsSettings;
+        }
+        appsError = read ? "" : ((data.stderr || "").trim().split("\n").pop().replace(/^z20: /, "")
+                                 || i18n("No answer from z20"));
+    }
+
     function refresh() {
         _start(_readCommand);
     }
@@ -288,6 +324,9 @@ QtObject {
         }
         if (command === _readCommand) {
             _readFrom = _done;
+        }
+        if (command === _appsCommand) {
+            _appsFrom = _done;
         }
         runner.connectSource(command);
     }
@@ -452,6 +491,10 @@ QtObject {
                 }
                 return;
             }
+            if (source === z20._appsCommand || source === z20._runningCommand) {
+                z20._readApps(source, data);
+                return;
+            }
             if (source === z20._osdCommand) {
                 return;
             }
@@ -485,6 +528,9 @@ QtObject {
             }
             if (source.startsWith(z20._z20 + " 'presence' '--json' '--' 'set' ")) {  // prints the settings now
                 z20.presenceSettings = z20._parse(data.stdout) || z20.presenceSettings;
+            }
+            if (source.startsWith(z20._z20 + " 'apps' '--json' ")) {  // prints the settings now
+                z20.appsSettings = z20._parse(data.stdout) || z20.appsSettings;
             }
             z20.refresh();
             if (source.startsWith(z20._z20 + " 'profile' '--' 'rename' ")) {
