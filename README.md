@@ -16,7 +16,8 @@ panel or the system tray.
   - lighting presets: one click applies one. The keyboard's own effects
     are stored in the active profile; the software ones (aurora, fire,
     rain, ripples, scanner, gradient) run as z20's animate service, also
-    after login
+    after login; keys with colors of their own get them over the effect
+    (`z20 color`)
   - the keyboard light: how bright the lighting is, of how it is set,
     dark while Plasma has its keyboard light off (when the screen dims or
     goes off); kept by z20's backlight service, which the slider starts
@@ -36,11 +37,20 @@ panel or the system tray.
 - **Settings** (the configure button at the top of the popup, the pencils
   next to "Lighting", "Macro keys" and "Presence", or right-click,
   Configure):
-  - **Lighting presets:** build the presets the popup offers: effect,
-    up to 8 colors, brightness, speed and direction. "Try on the keyboard"
-    shows one without storing it; "Back to stored" undoes that. Comes with
-    a few to start from (rainbow wave, ocean, aurora, fire, matrix, …);
-    "Add Built-in Presets" brings back the ones not in the list.
+  - **Lighting presets:** build the presets the popup offers on a drawing
+    of the keyboard (as `z20 leds` has it, ISO or ANSI), which runs the
+    preset: the software effects as z20 works them out, the keyboard's
+    own close to how they look. Effect, up to 8 colors, brightness, speed
+    and direction; and keys with a color of their own over the effect:
+    click keys or drag over them (Ctrl: to unselect), or pick groups
+    (WASD, arrows, letters, numpad, E1–E5, light bars, logo, …), then
+    Color…, Dark, or The Effect to give them back to it. "Own colors"
+    lists the colors keys have; a click selects their keys. "Try on the
+    keyboard" shows a preset without storing it, or "Show every change
+    there as it's made" does with each change; "Back to stored" undoes
+    that. Comes with a few to start from (rainbow wave, ocean, aurora,
+    fire, matrix, gaming with WASD and the arrows lit, …); "Add Built-in
+    Presets" brings back the ones not in the list.
   - **Profiles:** which profiles the popup shows (the active one always
     does) and their names, stored in the keyboard.
   - **Macros:** the macros stored in the keyboard, listed by name with a
@@ -92,7 +102,7 @@ widget sits among the tray's hidden entries.
 ## Install
 
 Needs z20 installed (`~/.local/bin/z20`, with its udev rule; from
-2026-11-11 on, with `z20 presence set`), see
+2026-11-16 on, with `z20 leds` and `z20 color ... none --live`), see
 [evga-z20](https://github.com/Thokas/evga-z20).
 
 ```

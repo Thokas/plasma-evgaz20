@@ -58,6 +58,9 @@ QtObject {
     property var presenceSettings: null
     // z20 macros --json ({"N": {name, actions}}); null until refreshMacros() read them.
     property var macros: null
+    // z20 leds --json: the keyboard to draw ({model, layout, leds: [{led, name, x, y, w, h}]}, in keys);
+    // null until refreshLeds() read it, and with a z20 from before 2026-11-16.
+    property var leds: null
     // The distance readings of the last two minutes: [{t (ms), mm, inView}].
     property var distances: []
     // Why there is no status (no keyboard, no z20) or no profile names, and the last failed command.
@@ -210,6 +213,10 @@ QtObject {
         _start(_macrosCommand);
     }
 
+    function refreshLeds() {
+        _start(_ledsCommand);
+    }
+
     function run(args) {
         runAll([args]);
     }
@@ -229,6 +236,7 @@ QtObject {
         + " presence settings --json || echo"
     readonly property string _sensorCommand: _z20 + " sensor --json"
     readonly property string _macrosCommand: _z20 + " macros --json"
+    readonly property string _ledsCommand: _z20 + " leds --json"
     readonly property string _eventCommand: _z20 + " events --json --wait 30"
     readonly property string _osdCommand: "qdbus6 org.kde.plasmashell /org/kde/osdService "
         + "org.kde.osdService.showText input-gaming " + _quote(i18n("Game Mode on"))
@@ -432,6 +440,10 @@ QtObject {
             }
             if (source === z20._macrosCommand) {
                 z20._readMacros(data);
+                return;
+            }
+            if (source === z20._ledsCommand) {
+                z20.leds = z20._parse(data.stdout) || z20.leds;
                 return;
             }
             if (source === z20._sensorCommand) {
