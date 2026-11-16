@@ -2,8 +2,8 @@
 # (tests/test_install.py); the widget's own tests skip there, without PyQt6. "widget": the popup's
 # parts and the settings page offscreen, with KDE's QML modules as Ubuntu has them and Plasma's own
 # settings dialog (plasma-desktop-data), against a fake z20 (tests/test_widget.py, tests/widget).
-# z20's shared QML comes from a clone of evga-z20, which is private: the repository secret
-# EVGA_Z20_TOKEN is a token that may read it (else this repository's own token is tried, which can't).
+# z20's shared QML comes from a clone of evga-z20 on the same server and owner; where that is private,
+# the repository secret EVGA_Z20_TOKEN is a token that may read it (else this repository's own token).
 # WIDGET_TESTS=required makes anything missing an error rather than a skip. plasmawindowed
 # (plasma-workspace) is left out, too big for every push: tests/ runs it where it is installed.
 name: tests
