@@ -24,7 +24,7 @@ jobs:
         run: |
           apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
             git ca-certificates python3 >/dev/null
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: install.sh
         run: python3 -I -m unittest discover -s tests -v
 
@@ -43,7 +43,7 @@ jobs:
             qml6-module-qtquick-dialogs qml6-module-qtquick-controls qml6-module-qtquick-layouts \
             qml6-module-qtquick-templates qml6-module-qtquick-window qml6-module-qtqml-workerscript \
             plasma-desktoptheme plasma-desktop-data >/dev/null
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: z20's shared QML
         run: git clone -q --depth 1 https://github.com/Thokas/evga-z20.git "$RUNNER_TEMP/evga-z20"
       - name: the popup and the settings page, offscreen
