@@ -102,13 +102,19 @@ settings dialog, and the whole widget in `plasmawindowed` where that is
 installed; any warning from the widget's QML fails. They need PyQt6 and
 KDE's QML modules, else they are skipped. Forgejo runs them on every push
 (`.forgejo/workflows/test.yml`; the repository secret `EVGA_Z20_TOKEN`
-lets it clone evga-z20).
+lets it clone evga-z20 there), GitHub on every pull request
+(`.github/workflows/test.yml`, with evga-z20 from GitHub).
 
 ## Uninstall
 
 ```
 ./uninstall.sh
 ```
+
+## Contributing
+
+Issues and pull requests are welcome on GitHub. GitHub Actions runs the
+tests on every pull request.
 
 ## License
 

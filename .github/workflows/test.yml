@@ -1,0 +1,52 @@
+# The tests on GitHub, on pushes and pull requests: the same as .forgejo/workflows/test.yml.
+# "unit": install.sh against a fake kpackagetool6; the widget's own tests skip there, without
+# PyQt6. "widget": the popup's parts and the settings page offscreen, with KDE's QML modules as Ubuntu
+# has them and Plasma's own settings dialog (plasma-desktop-data), against a fake z20; z20's shared
+# QML comes from a clone of evga-z20 (public on GitHub). WIDGET_TESTS=required makes anything missing
+# an error rather than a skip. plasmawindowed (plasma-workspace) is left out, too big for every push.
+name: tests
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:26.04
+    steps:
+      - name: packages
+        run: |
+          apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+            git ca-certificates python3 >/dev/null
+      - uses: actions/checkout@v4
+      - name: install.sh
+        run: python3 -I -m unittest discover -s tests -v
+
+  widget:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:26.04
+    steps:
+      - name: packages
+        run: |
+          apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+            git ca-certificates python3 fonts-dejavu-core \
+            python3-pyqt6 python3-pyqt6.qtqml python3-pyqt6.qtquick \
+            qml6-module-org-kde-kirigami qml6-module-org-kde-kcmutils qml6-module-org-kde-plasma-plasma5support \
+            qml6-module-org-kde-desktop qml6-module-org-kde-kitemmodels qml6-module-org-kde-kquickcontrols \
+            qml6-module-qtquick-dialogs qml6-module-qtquick-controls qml6-module-qtquick-layouts \
+            qml6-module-qtquick-templates qml6-module-qtquick-window qml6-module-qtqml-workerscript \
+            plasma-desktoptheme plasma-desktop-data >/dev/null
+      - uses: actions/checkout@v4
+      - name: z20's shared QML
+        run: git clone -q --depth 1 https://github.com/Thokas/evga-z20.git "$RUNNER_TEMP/evga-z20"
+      - name: the popup and the settings page, offscreen
+        env:
+          WIDGET_TESTS: required
+        run: Z20_REPO="$RUNNER_TEMP/evga-z20" python3 -I -m unittest discover -s tests -v

@@ -4,7 +4,8 @@ The tests are in `tests/` (`python3 -I -m unittest discover -s tests -v`):
 `test_install.py` (install.sh, a fake kpackagetool6), `test_widget.py` with
 `widget/drive.py` (popup parts and the settings page, scenario by scenario,
 with a stand-in `Plasmoid` module in `widget/stubs`). New behavior gets a
-scenario there; CI is `.forgejo/workflows/test.yml`. What's below is how they
+scenario there; CI is `.forgejo/workflows/test.yml`, and
+`.github/workflows/test.yml` on GitHub. What's below is how they
 work.
 
 ## Testing offscreen
