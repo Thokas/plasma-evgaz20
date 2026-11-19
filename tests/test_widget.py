@@ -119,7 +119,7 @@ class Widget(unittest.TestCase):
         self.assertEqual((r["applied"], r["checked"]), (0, ["Rainbow"]))
         sent = [line for line in r["log"] if line.split()[0] in ("animate", "light", "color")]
         self.assertEqual(sent[-3:], ["animate off", "light wave 0010ff 0060ff 00c0ff 00ffd0 --brightness 100 "
-                                     "--cycle 6000 --direction left", "color all none"])
+                                     "--cycle 6000 --direction left --zone all --stop never --no-on-key", "color all none"])
         self.assertEqual(r["state"], ["Ocean"])
 
     def test_presence_shows_what_the_service_sees(self):
