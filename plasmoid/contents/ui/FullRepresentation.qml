@@ -1,7 +1,7 @@
 /*
  * The popup (or the widget itself on the desktop): the keyboard's profile
  * and Game Mode, the lighting presets, what the macro keys do and the
- * presence sensor, one below the other. What's needed less often (report
+ * presence service, one below the other. What's needed less often (report
  * rate, n-key rollover, building presets, writing macros) is in the
  * settings.
  */
@@ -106,7 +106,7 @@ PlasmaExtras.Representation {
             }
 
             PresenceSection {
-                visible: !!full.z20.status && !!full.z20.sensor
+                visible: !!full.z20.status
                 Layout.fillWidth: true
                 Layout.leftMargin: Kirigami.Units.largeSpacing
                 Layout.rightMargin: Kirigami.Units.largeSpacing

@@ -4,7 +4,7 @@
  * A panel and desktop front end for z20 (~/.local/bin/z20,
  * https://github.com/Thokas/evga-z20): the profiles, Game Mode, lighting
  * presets (the keyboard's effects and z20's software ones), what the macro
- * keys do and the presence sensor, with the presence service's switch. The
+ * keys do and what z20's presence service sees, with its switch. The
  * editors are z20's settings app (z20-settings), which the pencils open on
  * their page; the widget's own settings are only which profiles it shows.
  *
@@ -26,7 +26,6 @@ PlasmoidItem {
     Lib.Z20Data {
         id: z20Data
         fast: root.expanded || Plasmoid.formFactor === PlasmaCore.Types.Planar
-        watchSensor: true
         watchEvents: true
         showOsd: true
         shownProfiles: Plasmoid.configuration.shownProfiles.split(",").map(Number).filter(n => n >= 1 && n <= 9)

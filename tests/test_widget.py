@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -82,7 +83,7 @@ class Widget(unittest.TestCase):
     def tearDownClass(cls):
         shutil.rmtree(cls.work)
 
-    def home(self):
+    def home(self, status=STATUS):
         home, runtime = tempfile.mkdtemp(prefix="z20home"), tempfile.mkdtemp(prefix="z20rt")
         self.addCleanup(shutil.rmtree, home)
         self.addCleanup(shutil.rmtree, runtime)
@@ -90,7 +91,7 @@ class Widget(unittest.TestCase):
         shutil.copy(os.path.join(HERE, "widget", "fake_z20"), os.path.join(home, ".local", "bin", "z20"))
         shutil.copy(os.path.join(HERE, "widget", "fake_z20_settings"), os.path.join(home, ".local", "bin", "z20-settings"))
         with open(os.path.join(home, "status.json"), "w") as f:
-            json.dump(STATUS, f)
+            json.dump(status, f)
         # Nothing of the session: no display, no session bus (D-Bus would start the desktop's services for
         # this home), no XDG dirs.
         env = {k: v for k, v in os.environ.items() if not k.startswith(("QT_", "XDG_", "DBUS_"))
@@ -101,8 +102,8 @@ class Widget(unittest.TestCase):
                    QT_FORCE_STDERR_LOGGING="1")  # errors on stderr, never to the journal (JOURNAL_STREAM)
         return home, env
 
-    def drive(self, scenario):
-        home, env = self.home()
+    def drive(self, scenario, status=STATUS):
+        home, env = self.home(status)
         done = subprocess.run([sys.executable, "-I", os.path.join(HERE, "widget", "drive.py"), scenario, self.package],
                               env=env, capture_output=True, text=True, timeout=120)
         lines = [line for line in done.stdout.splitlines() if line.startswith("RESULT ")]
@@ -120,6 +121,17 @@ class Widget(unittest.TestCase):
         self.assertEqual(sent[-3:], ["animate off", "light wave 0010ff 0060ff 00c0ff 00ffd0 --brightness 100 "
                                      "--cycle 6000 --direction left", "color all none"])
         self.assertEqual(r["state"], ["Ocean"])
+
+    def test_presence_shows_what_the_service_sees(self):
+        at = time.mktime((2026, 11, 19, 10, 31, 0, 0, 0, -1))
+        seen = {"present": False, "since": at, "in_view": True, "sensor": True, "keyboard": True}
+        r = self.drive("presence", {**STATUS, "presence": seen})
+        self.assertRegex(r["state"], r"^Away since 10.31")
+        self.assertFalse([line for line in r["log"] if line.startswith("sensor")])  # the service's, not its own
+        r = self.drive("presence", {**STATUS, "presence": {**seen, "sensor": False}})
+        self.assertEqual(r["state"], "The keyboard's sensor is off: the service can't see you")
+        r = self.drive("presence", {**STATUS, "presence": None})  # the service doesn't run
+        self.assertEqual(r["state"], "")
 
     def test_the_profile_menu_opens_the_app_or_the_widgets_settings(self):
         r = self.drive("profiles")

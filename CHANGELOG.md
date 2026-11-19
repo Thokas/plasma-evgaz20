@@ -6,6 +6,15 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- The popup's presence part shows what z20's presence service sees (at the
+  desk or away, since when), from `z20 status`, instead of reading the
+  sensor itself; the distance graph and what the keyboard itself does are
+  on the settings app's Presence page now. Needs evga-z20 from
+  2026-11-19 on for the service's view; with an older one, only the
+  switch shows.
+
 ## [0.1.0] - 2026-11-17
 
 The first release. Needs [evga-z20](https://github.com/Thokas/evga-z20)

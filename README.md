@@ -2,8 +2,8 @@
 
 A Plasma 6 widget for EVGA Z20 keyboards, on top of
 [z20](https://github.com/Thokas/evga-z20): the active profile, Game Mode,
-the lighting, what the macro keys do and the presence sensor, from the
-panel or the system tray.
+the lighting, what the macro keys do and what z20's presence service sees,
+from the panel or the system tray.
 
 - **Panel icon:** a keyboard, with a gamepad in the corner while Game Mode
   is on. Middle click switches Game Mode, the wheel steps through the
@@ -29,20 +29,19 @@ panel or the system tray.
     Fn layer that runs one, and "Another Key" puts a macro on any key.
     Below, how many other keys differ from the factory (the pencil there
     leads to the macros)
-  - whether someone is at the desk, or that nothing is in the sensor's
-    view (its beam is narrow: leaning back can take you out of it, and the
-    distance it then reports means nothing), the distance over the last two
-    minutes against the distance that counts as present, what the keyboard
-    does when you leave, and a switch for z20's presence service with what
-    it does (lock the screen, a lighting while you're away and the like,
-    set up in the settings)
+  - z20's presence service: whether it sees you at the desk or away and
+    since when (also that nothing is in the sensor's view, or that the
+    keyboard's sensor is off), and its switch with what it does (lock the
+    screen, a lighting while you're away and the like, set up in the
+    settings). The sensor's own reading, the distance over the last two
+    minutes and what the keyboard itself does are in the settings app
 - **Settings:** the editors are z20's settings app (`z20-settings`, in the
   application menu as "EVGA Z20"). The configure button at the top of the
   popup opens it, the pencils next to "Lighting", "Macro keys" and
   "Presence" and the profile menu's entries open it on their page:
   lighting presets on a drawing of the keyboard with colors per key,
-  macros, profile names, profiles for programs, what happens when you
-  leave, and the keyboard's own settings (see
+  macros, profile names, profiles for programs, the presence sensor and
+  what happens when you leave and come, and the keyboard's own settings (see
   [evga-z20](https://github.com/Thokas/evga-z20)). The presets are
   kept in `~/.config/z20/presets.json`, for the app and the popup alike;
   those kept in the widget before move there once. The widget's own
@@ -52,13 +51,13 @@ panel or the system tray.
   (`z20 backup`), back to the stored lighting (`z20 light reload`, and the
   saved software effect).
 
-It reads the keyboard every 3 s while the popup is open (the distance every
-second, for the graph), every 30 s otherwise, and at once when the keyboard
-reports a change made with its own keys (`z20 events`; media keys and the
-volume wheel don't count). Every change runs `z20`, one at a time in the
-order you made them; until a read shows a change, the popup shows it as
-made, so a quick second change builds on the first. Without a keyboard, the
-widget sits among the tray's hidden entries.
+It reads the keyboard every 3 s while the popup is open, every 30 s
+otherwise, and at once when the keyboard reports a change made with its own
+keys (`z20 events`; media keys and the volume wheel don't count). Every
+change runs `z20`, one at a time in the order you made them; until a read
+shows a change, the popup shows it as made, so a quick second change builds
+on the first. Without a keyboard, the widget sits among the tray's hidden
+entries.
 
 > [!WARNING]
 > **Written entirely by AI.** Like z20, this widget was written by an AI

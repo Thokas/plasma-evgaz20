@@ -185,6 +185,10 @@ SCENARIOS = {
                                            "Choose the Profiles Shown Here…")]),
         (1500, lambda: note(settings=lines("settings.log"), triggered=evj("Plasmoid.triggered"))),
     ]),
+    "presence": ("PresenceSection", lambda: [
+        (100, lambda: ev("z20.refresh()")),
+        (1500, lambda: note(state=ev("section.stateText"), log=lines("z20.log"))),
+    ]),
     "popup-page": (None, lambda: [
         (2500, lambda: note(title=ev("title", page()), shown=ev("cfg_shownProfiles", page()),
                             boxes=[b.property("text") for b in named_kind("CheckBox") if b.property("checked")])),
