@@ -15,6 +15,9 @@ on:
 jobs:
   unit:
     runs-on: docker
+    # Plain ubuntu:26.04 on purpose, not the CI image: this job's tests run without PyQt6 and KDE's QML
+    # modules, which the other job's need; in the image they would run those again. Its packages come
+    # from the German mirror (archive.ubuntu.com can crawl for hours).
     container:
       image: ubuntu:26.04
     steps:
@@ -22,8 +25,13 @@ jobs:
         env:
           TOKEN: ${{ github.token }}
         run: |
-          apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
-            git ca-certificates python3 >/dev/null
+          pkgs="git ca-certificates python3"
+          dpkg -s $pkgs >/dev/null 2>&1 || {
+            sed -i -E 's#http://(archive|security)\.ubuntu\.com/ubuntu/?#http://de.archive.ubuntu.com/ubuntu/#' \
+              /etc/apt/sources.list.d/ubuntu.sources
+            apt-get -qq -o Acquire::Retries=3 update && DEBIAN_FRONTEND=noninteractive \
+              apt-get -y -qq -o Acquire::Retries=3 install --no-install-recommends $pkgs >/dev/null
+          }
           # The token goes in a header for the clone only (GIT_CONFIG_*), not into src/.git/config.
           auth=$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)
           GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.extraHeader GIT_CONFIG_VALUE_0="Authorization: Basic $auth" \
@@ -34,22 +42,30 @@ jobs:
 
   widget:
     runs-on: docker
+    # The CI image when the variable KDE_CI_IMAGE names it (the ci-image repo): it has every package the
+    # checkout steps install, so they skip apt. Without it, plain ubuntu:26.04 installs them from the German
+    # mirror (archive.ubuntu.com can crawl for hours).
     container:
-      image: ubuntu:26.04
+      image: ${{ vars.KDE_CI_IMAGE || 'ubuntu:26.04' }}
     steps:
       - name: checkout, and z20's shared QML
         env:
           TOKEN: ${{ github.token }}
           Z20_TOKEN: ${{ secrets.EVGA_Z20_TOKEN || github.token }}
         run: |
-          apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
-            git ca-certificates python3 fonts-dejavu-core \
-            python3-pyqt6 python3-pyqt6.qtqml python3-pyqt6.qtquick \
-            qml6-module-org-kde-kirigami qml6-module-org-kde-kcmutils qml6-module-org-kde-plasma-plasma5support \
-            qml6-module-org-kde-desktop qml6-module-org-kde-kitemmodels qml6-module-org-kde-kquickcontrols \
-            qml6-module-qtquick-dialogs qml6-module-qtquick-controls qml6-module-qtquick-layouts \
-            qml6-module-qtquick-templates qml6-module-qtquick-window qml6-module-qtqml-workerscript \
-            plasma-desktoptheme plasma-desktop-data >/dev/null
+          pkgs="git ca-certificates python3 fonts-dejavu-core
+            python3-pyqt6 python3-pyqt6.qtqml python3-pyqt6.qtquick
+            qml6-module-org-kde-kirigami qml6-module-org-kde-kcmutils qml6-module-org-kde-plasma-plasma5support
+            qml6-module-org-kde-desktop qml6-module-org-kde-kitemmodels qml6-module-org-kde-kquickcontrols
+            qml6-module-qtquick-dialogs qml6-module-qtquick-controls qml6-module-qtquick-layouts
+            qml6-module-qtquick-templates qml6-module-qtquick-window qml6-module-qtqml-workerscript
+            plasma-desktoptheme plasma-desktop-data"
+          dpkg -s $pkgs >/dev/null 2>&1 || {
+            sed -i -E 's#http://(archive|security)\.ubuntu\.com/ubuntu/?#http://de.archive.ubuntu.com/ubuntu/#' \
+              /etc/apt/sources.list.d/ubuntu.sources
+            apt-get -qq -o Acquire::Retries=3 update && DEBIAN_FRONTEND=noninteractive \
+              apt-get -y -qq -o Acquire::Retries=3 install --no-install-recommends $pkgs >/dev/null
+          }
           auth=$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)
           GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.extraHeader GIT_CONFIG_VALUE_0="Authorization: Basic $auth" \
             git clone -q "${{ github.server_url }}/${{ github.repository }}.git" src
