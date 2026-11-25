@@ -15,11 +15,13 @@ on:
 jobs:
   unit:
     runs-on: docker
-    # Plain ubuntu:26.04 on purpose, not the CI image: this job's tests run without PyQt6 and KDE's QML
-    # modules, which the other job's need; in the image they would run those again. Its packages come
-    # from the German mirror (archive.ubuntu.com can crawl for hours).
+    # The image ubuntu-ci when the variable UBUNTU_CI_IMAGE names it (the ci-image repo), not kde-ci on
+    # purpose: this job's tests run without PyQt6 and KDE's QML modules, which the other job's need; in
+    # kde-ci they would run those again. ubuntu-ci has every package the checkout step installs, so it skips
+    # apt. Without it, plain ubuntu:26.04 installs them from the German mirror (archive.ubuntu.com can crawl
+    # for hours).
     container:
-      image: ubuntu:26.04
+      image: ${{ vars.UBUNTU_CI_IMAGE || 'ubuntu:26.04' }}
     steps:
       - name: checkout
         env:
